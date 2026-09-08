@@ -17,6 +17,16 @@
       {"address": "0xEF28B", "label": "supply"},
       {"address": "0xEF28E", "label": "merge"},
       {"address": "0xEF293", "label": "battle"}
+    ],
+    "map_c_menu": [
+      {"address": "0xEF3CB", "label": "automatic"},
+      {"address": "0xEF3D1", "label": "map"},
+      {"address": "0xEF3D8", "label": "units"},
+      {"address": "0xEF3DF", "label": "headquarters"},
+      {"address": "0xEF3E6", "label": "cities"},
+      {"address": "0xEF3EE", "label": "income"},
+      {"address": "0xEF3F5", "label": "development"},
+      {"address": "0xEF3FC", "label": "unit_order"}
     ]
   }
 }

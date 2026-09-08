@@ -42,3 +42,9 @@
 - Armament records: `0x33DB6`, 157 records, 8 bytes each.
 - No table or 8x8 glyph bytes have been modified at this checkpoint.
 - Before any Korean glyph allocation, audit code usage across both complete tables and retain the original eight-byte record length.
+
+## Map C menu — glyph-only fixed-record candidate
+
+- The ordinary and focused `状況表` records at `0xEF3DF` and `0xEF3E6` are a state pair, not separate menu meanings.
+- Translation uses a direct one-glyph-to-one-glyph mapping: `全自動/地図/部隊表/状況表/収入表/開発表/部隊順序` → `전자동/지도/부대표/상황표/수입표/개발표/부대순서`.
+- No menu record bytes, counters, addresses, or display-cell counts are changed.

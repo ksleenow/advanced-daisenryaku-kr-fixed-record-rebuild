@@ -28,6 +28,24 @@
       {"index": "0x11A", "source": "良", "target": "량"},
       {"index": "0x110", "source": "行", "target": "행"},
       {"index": "0x0FF", "source": "軍", "target": "군"}
+    ],
+    "map_c_menu": [
+      {"index": "0x147", "source": "全", "target": "전"},
+      {"index": "0x0E3", "source": "自", "target": "자"},
+      {"index": "0x108", "source": "動", "target": "동"},
+      {"index": "0x148", "source": "地", "target": "지"},
+      {"index": "0x149", "source": "図", "target": "도"},
+      {"index": "0x14A", "source": "部", "target": "부"},
+      {"index": "0x14B", "source": "隊", "target": "대"},
+      {"index": "0x14C", "source": "表", "target": "표"},
+      {"index": "0x14D", "source": "状", "target": "상"},
+      {"index": "0x14E", "source": "況", "target": "황"},
+      {"index": "0x14F", "source": "収", "target": "수"},
+      {"index": "0x150", "source": "入", "target": "입"},
+      {"index": "0x151", "source": "開", "target": "개"},
+      {"index": "0x113", "source": "発", "target": "발"},
+      {"index": "0x152", "source": "順", "target": "순"},
+      {"index": "0x153", "source": "序", "target": "서"}
     ]
   }
 }
