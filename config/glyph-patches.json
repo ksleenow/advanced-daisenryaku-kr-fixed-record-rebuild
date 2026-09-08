@@ -53,6 +53,7 @@
       {"index": "0x058", "source": "タ", "target": "타"},
       {"index": "0x04A", "source": "イ", "target": "이"},
       {"index": "0x094", "source": "プ", "target": "프"},
+      {"index": "0x156", "source": "未", "target": "미"},
       {"index": "0x157", "source": "行", "target": "행"},
       {"index": "0x158", "source": "動", "target": "동"}
     ]
