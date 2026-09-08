@@ -42,6 +42,20 @@ def render_glyph(character: str, font_path: Path) -> bytes:
     return bytes(result)
 
 
+def render_small_glyph(character: str, font_path: Path) -> bytes:
+    """Render the user-approved M8x8 bitmap without resampling."""
+    canvas = Image.new("L", (16, 16), 0)
+    font = ImageFont.truetype(str(font_path), 16)
+    draw = ImageDraw.Draw(canvas)
+    box = draw.textbbox((0, 0), character, font=font)
+    draw.text((-box[0], -box[1]), character, fill=255, font=font)
+    pixels = canvas.crop((0, 0, 8, 8)).load()
+    return bytes(
+        sum((0x80 >> column) for column in range(8) if pixels[column, row])
+        for row in range(8)
+    )
+
+
 def genesis_checksum(rom: bytes) -> int:
     total = 0
     for offset in range(0x200, len(rom), 2):
@@ -57,10 +71,14 @@ def main() -> None:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--group", action="append", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--include-small-font", action="store_true")
     args = parser.parse_args()
 
     source_config = json.loads((ROOT / "config/source.json").read_text(encoding="utf-8"))
     font_config = json.loads((ROOT / "config/font-source.json").read_text(encoding="utf-8"))
+    small_font_config = json.loads(
+        (ROOT / "config/small-font-source.json").read_text(encoding="utf-8")
+    )
     patch_config = json.loads((ROOT / "config/glyph-patches.json").read_text(encoding="utf-8"))
     source = args.source.read_bytes()
     if sha256(source) != source_config["sha256"]:
@@ -70,6 +88,10 @@ def main() -> None:
     font_data = font_path.read_bytes()
     if sha256(font_data) != font_config["sha256"]:
         raise SystemExit("font source hash mismatch")
+    small_font_path = Path(small_font_config["path"])
+    small_font_data = small_font_path.read_bytes()
+    if sha256(small_font_data) != small_font_config["sha256"]:
+        raise SystemExit("small font source hash mismatch")
 
     patches = []
     for group in args.group:
@@ -82,8 +104,18 @@ def main() -> None:
     glyph_bytes = int(patch_config["glyph_bytes"])
     rom = bytearray(source)
     changed_ranges = []
+    seen: dict[int, str] = {}
     for patch in patches:
         index = int(patch["index"], 0)
+        prior = seen.get(index)
+        if prior is not None:
+            if prior != patch["target"]:
+                raise SystemExit(
+                    f"conflicting targets for glyph 0x{index:03X}: "
+                    f"{prior!r} and {patch['target']!r}"
+                )
+            continue
+        seen[index] = patch["target"]
         start = font_base + index * glyph_bytes
         end = start + glyph_bytes
         replacement = render_glyph(patch["target"], font_path)
@@ -91,10 +123,23 @@ def main() -> None:
             raise SystemExit("rendered glyph has unexpected size")
         rom[start:end] = replacement
         changed_ranges.append({
+            "font": "16x16",
             "source": patch["source"], "target": patch["target"],
             "index": f"0x{index:03X}", "start": f"0x{start:06X}",
             "end_exclusive": f"0x{end:06X}"
         })
+        if args.include_small_font and index < 0x152:
+            small_start = 0x3850E + index * 8
+            small_end = small_start + 8
+            rom[small_start:small_end] = render_small_glyph(
+                patch["target"], small_font_path
+            )
+            changed_ranges.append({
+                "font": "8x8",
+                "source": patch["source"], "target": patch["target"],
+                "index": f"0x{index:03X}", "start": f"0x{small_start:06X}",
+                "end_exclusive": f"0x{small_end:06X}"
+            })
 
     checksum = genesis_checksum(rom)
     rom[0x18E:0x190] = checksum.to_bytes(2, "big")
