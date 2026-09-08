@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "font_base": "0x3C86A",
+  "glyph_bytes": 32,
+  "groups": {
+    "unit_action_menu": [
+      {"index": "0x107", "source": "移", "target": "이"},
+      {"index": "0x108", "source": "動", "target": "동"},
+      {"index": "0x0D5", "source": "攻", "target": "공"},
+      {"index": "0x0D1", "source": "撃", "target": "격"},
+      {"index": "0x109", "source": "占", "target": "점"},
+      {"index": "0x10A", "source": "領", "target": "령"},
+      {"index": "0x0EC", "source": "補", "target": "보"},
+      {"index": "0x0ED", "source": "給", "target": "급"},
+      {"index": "0x10B", "source": "合", "target": "합"},
+      {"index": "0x10C", "source": "流", "target": "류"},
+      {"index": "0x10D", "source": "武", "target": "무"},
+      {"index": "0x0AA", "source": "装", "target": "장"}
+    ],
+    "unit_secondary_menu": [
+      {"index": "0x111", "source": "性", "target": "성"},
+      {"index": "0x112", "source": "能", "target": "능"},
+      {"index": "0x10E", "source": "処", "target": "처"},
+      {"index": "0x10F", "source": "分", "target": "분"},
+      {"index": "0x114", "source": "進", "target": "진"},
+      {"index": "0x118", "source": "化", "target": "화"},
+      {"index": "0x119", "source": "改", "target": "개"},
+      {"index": "0x11A", "source": "良", "target": "량"},
+      {"index": "0x110", "source": "行", "target": "행"},
+      {"index": "0x0FF", "source": "軍", "target": "군"}
+    ]
+  }
+}
