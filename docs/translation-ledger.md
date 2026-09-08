@@ -42,4 +42,3 @@
 - Armament records: `0x33DB6`, 157 records, 8 bytes each.
 - No table or 8x8 glyph bytes have been modified at this checkpoint.
 - Before any Korean glyph allocation, audit code usage across both complete tables and retain the original eight-byte record length.
-- First bounded 8x8 candidate keeps the Japanese-original English unit name `PzKw35t` and `7.92mmMG` unchanged. It changes only Japanese `砲` within `37mm L40` to `포`, and Japanese `未使用` to `미사용`; each resulting record remains exactly 8 bytes.

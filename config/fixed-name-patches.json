@@ -9,19 +9,9 @@
   "groups": {
     "pzkw35t_primary_armament": {
       "glyphs": [
-        {"code": "0xA7", "target": "포"},
-        {"code": "0xA8", "target": "미"},
-        {"code": "0xA9", "target": "사"},
-        {"code": "0xAA", "target": "용"}
+        {"code": "0xA7", "target": "포"}
       ],
       "records": [
-        {
-          "table": "armament_names",
-          "index": 0,
-          "expected_hex": "14 14 22 23 28 14 14 14",
-          "replacement_hex": "A8 A9 AA 14 14 14 14 14",
-          "display": "미사용"
-        },
         {
           "table": "armament_names",
           "index": 53,
