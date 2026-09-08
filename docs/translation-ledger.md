@@ -35,3 +35,10 @@
   레코드는 `01 | FD 13 | FD 02`, 즉 `0x110`과 `0x0FF`를 참조한다.
   화면만 보고 중복 슬롯 `0x116`을 수정하면 변화가 없으므로 반드시 실제
   레코드의 토큰을 기준으로 슬롯을 선택한다.
+# 8x8 unit/armament inventory checkpoint
+
+- Japanese source remains the sole translation authority. The English ROM is recorded and hash-checked only as a same-address label locator.
+- Unit records: `0x2B368`, 669 records, `0x22` bytes each; the displayed name occupies the first 8 bytes.
+- Armament records: `0x33DB6`, 157 records, 8 bytes each.
+- No table or 8x8 glyph bytes have been modified at this checkpoint.
+- Before any Korean glyph allocation, audit code usage across both complete tables and retain the original eight-byte record length.

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "groups": {
+    "all_unit_names": {
+      "base": "0x2B368",
+      "first_index": 0,
+      "count": 669,
+      "record_size": 34,
+      "name_offset": 0,
+      "name_size": 8
+    },
+    "armament_names": {
+      "base": "0x33DB6",
+      "count": 157,
+      "record_size": 8,
+      "name_offset": 0,
+      "name_size": 8
+    },
+    "unit_names_visible_range": {
+      "base": "0x2FDC8",
+      "first_index": 560,
+      "count": 109,
+      "record_size": 34,
+      "name_offset": 0,
+      "name_size": 8
+    }
+  }
+}
