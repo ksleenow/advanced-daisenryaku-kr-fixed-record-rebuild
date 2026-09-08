@@ -517,6 +517,11 @@
       {"index":"0x218","source":"よ","target":"요"},
       {"index":"0x22A","source":"せ","target":"세"},
       {"index":"0x22B","source":"ア","target":"아"}
+    ],
+    "kanji_onreading_final_confident": [
+      {"index":"0x0B4","source":"室","target":"실"},
+      {"index":"0x0F5","source":"絡","target":"락"},
+      {"index":"0x21F","source":"曜","target":"요"}
     ]
   }
 }
