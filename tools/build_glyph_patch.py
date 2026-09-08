@@ -128,7 +128,10 @@ def main() -> None:
             "index": f"0x{index:03X}", "start": f"0x{start:06X}",
             "end_exclusive": f"0x{end:06X}"
         })
-        if args.include_small_font and index < 0x152:
+        # Only the first 0x800 bytes are 8x8 glyphs (codes 00-FF).  The
+        # remaining 0x290-byte DMA tail contains battle-display tiles and must
+        # remain byte-identical to the Japanese original.
+        if args.include_small_font and index < 0x100:
             small_start = 0x3850E + index * 8
             small_end = small_start + 8
             rom[small_start:small_end] = render_small_glyph(
