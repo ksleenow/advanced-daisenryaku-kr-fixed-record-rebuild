@@ -9,6 +9,14 @@
       {"address": "0xEF150", "label": "a_primary_c_secondary"},
       {"address": "0xEF15E", "label": "a_secondary_c_primary"},
       {"address": "0xEF16C", "label": "scenario_suffix"}
+    ],
+    "unit_action_menu": [
+      {"address": "0xEF27E", "label": "move"},
+      {"address": "0xEF283", "label": "attack"},
+      {"address": "0xEF286", "label": "capture"},
+      {"address": "0xEF28B", "label": "supply"},
+      {"address": "0xEF28E", "label": "merge"},
+      {"address": "0xEF293", "label": "battle"}
     ]
   }
 }

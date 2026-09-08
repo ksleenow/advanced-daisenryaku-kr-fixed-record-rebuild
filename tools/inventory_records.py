@@ -31,6 +31,23 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def tokenize_payload(payload: bytes) -> list[str]:
+    """Split the game's one-byte and FD-prefixed two-byte glyph codes."""
+    tokens: list[str] = []
+    index = 0
+    while index < len(payload):
+        if payload[index] == 0xFD:
+            if index + 1 >= len(payload):
+                tokens.append("FD!")
+                break
+            tokens.append(f"FD {payload[index + 1]:02X}")
+            index += 2
+        else:
+            tokens.append(f"{payload[index]:02X}")
+            index += 1
+    return tokens
+
+
 def main() -> None:
     args = parse_args()
     source_config = json.loads(SOURCE_CONFIG.read_text(encoding="utf-8"))
@@ -56,6 +73,7 @@ def main() -> None:
         record = source[start:end]
         declared_counter = record[0] if record else None
         payload = record[1:] if record else b""
+        glyph_tokens = tokenize_payload(payload)
         rows.append(
             {
                 "group": args.group,
@@ -66,7 +84,9 @@ def main() -> None:
                 "declared_counter": declared_counter,
                 "payload_cells_if_dbf": declared_counter + 1 if declared_counter is not None else None,
                 "payload_byte_length": len(payload),
-                "counter_matches_span": declared_counter + 1 == len(payload) if declared_counter is not None else False,
+                "glyph_cells": len(glyph_tokens),
+                "counter_matches_cells": declared_counter + 1 == len(glyph_tokens) if declared_counter is not None else False,
+                "glyph_tokens": " | ".join(glyph_tokens),
                 "hex": record.hex(" ").upper(),
             }
         )
