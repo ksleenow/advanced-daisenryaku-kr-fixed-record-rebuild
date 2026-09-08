@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "groups": {
+    "main_mode_menu": [
+      {"address": "0xEF12F", "label": "continue"},
+      {"address": "0xEF138", "label": "standard_scenario"},
+      {"address": "0xEF141", "label": "campaign_mode"},
+      {"address": "0xEF14A", "label": "mode"},
+      {"address": "0xEF150", "label": "a_primary_c_secondary"},
+      {"address": "0xEF15E", "label": "a_secondary_c_primary"},
+      {"address": "0xEF16C", "label": "scenario_suffix"}
+    ]
+  }
+}
