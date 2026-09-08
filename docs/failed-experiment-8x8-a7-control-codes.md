@@ -4,6 +4,8 @@
 
 The v004/v005 candidates stopped when entering Standard Scenario.
 
+Runtime confirmation: the user verified that the approved v003 parent does **not** stop at the same Standard Scenario transition. This isolates the regression to the v004/v005 compact-font experiment.
+
 ## Proven delta
 
 - Parent: approved v003, SHA-256 `ABDC2109AC7AEC9A04A95CE1D1B7DB7E987F14BCC6000A2CDD0BDC46C6EC31F2`
