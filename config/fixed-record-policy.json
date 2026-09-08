@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "source_language": "ja",
+  "translation_language": "ko",
+  "preserve_original_english": true,
+  "preserve_record_byte_length": true,
+  "preserve_display_cells": true,
+  "pad_short_text_with_spaces": true,
+  "allow_record_relocation": false,
+  "allow_renderer_hooks": false,
+  "allow_vram_layout_changes": false,
+  "required_runtime_states": [
+    "initial",
+    "focus_in",
+    "focus_out",
+    "reentry",
+    "return_to_map"
+  ]
+}
+

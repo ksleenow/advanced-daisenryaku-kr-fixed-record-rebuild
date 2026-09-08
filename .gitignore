@@ -1,0 +1,4 @@
+# ROM images and generated output must never be committed or distributed.
+out/
+__pycache__/
+*.pyc
