@@ -27,6 +27,11 @@
       {"address": "0xEF3EE", "label": "income"},
       {"address": "0xEF3F5", "label": "development"},
       {"address": "0xEF3FC", "label": "unit_order"}
+    ],
+    "unit_order_menu": [
+      {"address": "0xEF405", "label": "number_order"},
+      {"address": "0xEF40D", "label": "type_order"},
+      {"address": "0xEF413", "label": "action_order"}
     ]
   }
 }

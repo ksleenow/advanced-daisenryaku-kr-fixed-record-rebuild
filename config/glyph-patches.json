@@ -46,6 +46,15 @@
       {"index": "0x113", "source": "発", "target": "발"},
       {"index": "0x152", "source": "順", "target": "순"},
       {"index": "0x153", "source": "序", "target": "서"}
+    ],
+    "unit_order_menu": [
+      {"index": "0x154", "source": "番", "target": "번"},
+      {"index": "0x155", "source": "号", "target": "호"},
+      {"index": "0x058", "source": "タ", "target": "타"},
+      {"index": "0x04A", "source": "イ", "target": "이"},
+      {"index": "0x094", "source": "プ", "target": "프"},
+      {"index": "0x157", "source": "行", "target": "행"},
+      {"index": "0x158", "source": "動", "target": "동"}
     ]
   }
 }
