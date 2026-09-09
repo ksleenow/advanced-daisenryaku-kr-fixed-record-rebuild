@@ -522,6 +522,11 @@
       {"index":"0x0B4","source":"室","target":"실"},
       {"index":"0x0F5","source":"絡","target":"락"},
       {"index":"0x21F","source":"曜","target":"요"}
+    ],
+    "kanji_onreading_remaining_confident": [
+      {"index":"0x125","source":"陣","target":"진"},
+      {"index":"0x1EF","source":"邦","target":"방"},
+      {"index":"0x237","source":"退","target":"퇴"}
     ]
   }
 }
