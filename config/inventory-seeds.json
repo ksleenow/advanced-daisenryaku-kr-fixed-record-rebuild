@@ -32,6 +32,17 @@
       {"address": "0xEF405", "label": "number_order"},
       {"address": "0xEF40D", "label": "type_order"},
       {"address": "0xEF413", "label": "action_order"}
+    ],
+    "game_menu_cancel_states": [
+      {"address": "0xEF250", "label": "cancel_initial"},
+      {"address": "0xEF253", "label": "cancel_focused"}
+    ],
+    "game_menu_save_load_states": [
+      {"address": "0xEF452", "label": "load_initial"},
+      {"address": "0xEF456", "label": "load_focused"},
+      {"address": "0xEF45B", "label": "save_initial"},
+      {"address": "0xEF45F", "label": "surrender_initial"},
+      {"address": "0xEF463", "label": "surrender_focused"}
     ]
   }
 }

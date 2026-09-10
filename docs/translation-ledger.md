@@ -35,6 +35,18 @@
   레코드는 `01 | FD 13 | FD 02`, 즉 `0x110`과 `0x0FF`를 참조한다.
   화면만 보고 중복 슬롯 `0x116`을 수정하면 변화가 없으므로 반드시 실제
   레코드의 토큰을 기준으로 슬롯을 선택한다.
+
+## 게임 메뉴 상태 레코드
+
+| 화면 | 원문 | 원본 바이트 | 표시 칸 | 번역 단계 | 패딩 | 초기 | 선택 | 해제 | 복귀 |
+|---|---|---:|---:|---|---:|---|---|---|---|
+| 게임 메뉴 | 中止 | 3/4 | 2/3 | 중지(글리프 직역) | 선택판 1칸 | 확인 | 확인 | 조사 필요 | 조사 필요 |
+| 게임 메뉴 | ロード | 4/5 | 3/4 | 로-도(음역) | 선택판 1칸 | 확인 | 확인 | 조사 필요 | 조사 필요 |
+| 게임 메뉴 | セーブ | 4 | 3 | 세-브(음역) | 없음 | 확인 | 상태 공유 조사 필요 | 조사 필요 | 조사 필요 |
+| 게임 메뉴 | 降伏 | 4/5 | 2/3 | 강복(한자음 1차) | 선택판 1칸 | 확인 | 확인 | 조사 필요 | 조사 필요 |
+
+세부 주소와 원시 바이트는 `docs/game-menu-fixed-record-audit.md` 및
+`out/inventory/game_menu_*_states.*`를 기준으로 한다.
 # 8x8 unit/armament inventory checkpoint
 
 - Japanese source remains the sole translation authority. The English ROM is recorded and hash-checked only as a same-address label locator.
