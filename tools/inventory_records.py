@@ -32,15 +32,15 @@ def parse_args() -> argparse.Namespace:
 
 
 def tokenize_payload(payload: bytes) -> list[str]:
-    """Split the game's one-byte and FD-prefixed two-byte glyph codes."""
+    """Split one-byte and FD/FE-prefixed two-byte glyph tokens."""
     tokens: list[str] = []
     index = 0
     while index < len(payload):
-        if payload[index] == 0xFD:
+        if payload[index] in (0xFD, 0xFE):
             if index + 1 >= len(payload):
-                tokens.append("FD!")
+                tokens.append(f"{payload[index]:02X}!")
                 break
-            tokens.append(f"FD {payload[index + 1]:02X}")
+            tokens.append(f"{payload[index]:02X} {payload[index + 1]:02X}")
             index += 2
         else:
             tokens.append(f"{payload[index]:02X}")
