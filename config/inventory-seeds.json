@@ -45,8 +45,8 @@
       {"address": "0xEF463", "label": "surrender_focused"}
     ],
     "game_menu_save_load_subscreen_records": [
-      {"address": "0xEF468", "label": "save_select_header"},
-      {"address": "0xEF473", "label": "load_select_header"},
+      {"address": "0xEF468", "label": "save_number_select_header"},
+      {"address": "0xEF473", "label": "load_number_select_header"},
       {"address": "0xEF47E", "label": "start_choice"},
       {"address": "0xEF485", "label": "edit_choice"}
     ]
