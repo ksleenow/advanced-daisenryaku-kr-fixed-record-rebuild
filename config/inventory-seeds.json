@@ -43,6 +43,12 @@
       {"address": "0xEF45B", "label": "save_initial"},
       {"address": "0xEF45F", "label": "surrender_initial"},
       {"address": "0xEF463", "label": "surrender_focused"}
+    ],
+    "game_menu_confirmation_records": [
+      {"address": "0xEF468", "label": "save_confirmation"},
+      {"address": "0xEF473", "label": "load_confirmation"},
+      {"address": "0xEF47E", "label": "confirmation_choice_a"},
+      {"address": "0xEF485", "label": "confirmation_choice_b"}
     ]
   }
 }
