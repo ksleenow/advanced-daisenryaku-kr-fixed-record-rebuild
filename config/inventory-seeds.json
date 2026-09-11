@@ -44,6 +44,15 @@
       {"address": "0xEF45F", "label": "surrender_initial"},
       {"address": "0xEF463", "label": "surrender_focused"}
     ],
+    "pregame_option_records": [
+      {"address": "0xEF428", "label": "sound"},
+      {"address": "0xEF42D", "label": "control"},
+      {"address": "0xEF433", "label": "search"},
+      {"address": "0xEF43A", "label": "weather"},
+      {"address": "0xEF441", "label": "system"},
+      {"address": "0xEF446", "label": "game"},
+      {"address": "0xEF44B", "label": "music_header"}
+    ],
     "game_menu_save_load_subscreen_records": [
       {"address": "0xEF468", "label": "save_number_select_header"},
       {"address": "0xEF473", "label": "load_number_select_header"},
