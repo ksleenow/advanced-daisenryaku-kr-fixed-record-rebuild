@@ -33,6 +33,10 @@
       {"address": "0xEF40D", "label": "type_order"},
       {"address": "0xEF413", "label": "action_order"}
     ],
+    "weather_option_records": [
+      {"address": "0xEF41C", "label": "weather_menu_padded"},
+      {"address": "0xEF423", "label": "weather_screen_title"}
+    ],
     "game_menu_cancel_states": [
       {"address": "0xEF250", "label": "cancel_initial"},
       {"address": "0xEF253", "label": "cancel_focused"}
