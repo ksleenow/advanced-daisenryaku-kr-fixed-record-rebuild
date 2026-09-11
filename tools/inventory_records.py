@@ -48,6 +48,25 @@ def tokenize_payload(payload: bytes) -> list[str]:
     return tokens
 
 
+def glyph_indices(payload: bytes) -> list[str]:
+    """Resolve record bytes to the physical glyph indices used by 0x81C8."""
+    indices: list[str] = []
+    index = 0
+    while index < len(payload):
+        code = payload[index]
+        if code in (0xFD, 0xFE):
+            if index + 1 >= len(payload):
+                indices.append(f"0x{code:03X}!")
+                break
+            glyph_index = code + ((code - 0xFD) << 8) + payload[index + 1]
+            indices.append(f"0x{glyph_index:03X}")
+            index += 2
+        else:
+            indices.append(f"0x{code:03X}")
+            index += 1
+    return indices
+
+
 def main() -> None:
     args = parse_args()
     source_config = json.loads(SOURCE_CONFIG.read_text(encoding="utf-8"))
@@ -87,6 +106,7 @@ def main() -> None:
                 "glyph_cells": len(glyph_tokens),
                 "counter_matches_cells": declared_counter + 1 == len(glyph_tokens) if declared_counter is not None else False,
                 "glyph_tokens": " | ".join(glyph_tokens),
+                "glyph_indices": " | ".join(glyph_indices(payload)),
                 "hex": record.hex(" ").upper(),
             }
         )
