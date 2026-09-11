@@ -57,6 +57,34 @@
       {"address": "0xEF446", "label": "game"},
       {"address": "0xEF44B", "label": "music_header"}
     ],
+    "control_detail_records": [
+      {"address": "0xEF49E", "label": "control_title"},
+      {"address": "0xEF4A5", "label": "control_column_header"},
+      {"address": "0xEF4AE", "label": "control_value_0"},
+      {"address": "0xEF4B3", "label": "control_value_1"},
+      {"address": "0xEF4B8", "label": "control_value_2"}
+    ],
+    "search_detail_records": [
+      {"address": "0xEF502", "label": "search_title"},
+      {"address": "0xEF50A", "label": "search_level_row"},
+      {"address": "0xEF514", "label": "search_level_0"},
+      {"address": "0xEF519", "label": "search_level_1"},
+      {"address": "0xEF51D", "label": "search_level_2"},
+      {"address": "0xEF521", "label": "search_level_3"}
+    ],
+    "weather_detail_records": [
+      {"address": "0xEF525", "label": "weather_title"},
+      {"address": "0xEF52D", "label": "weather_value_row"}
+    ],
+    "system_detail_records": [
+      {"address": "0xEF4BD", "label": "system_row_0"},
+      {"address": "0xEF4CB", "label": "system_row_1"},
+      {"address": "0xEF4D5", "label": "system_row_2"},
+      {"address": "0xEF4E3", "label": "system_row_3"},
+      {"address": "0xEF4F3", "label": "system_title"},
+      {"address": "0xEF4F8", "label": "system_real"},
+      {"address": "0xEF4FD", "label": "system_auto"}
+    ],
     "game_menu_save_load_subscreen_records": [
       {"address": "0xEF468", "label": "save_number_select_header"},
       {"address": "0xEF473", "label": "load_number_select_header"},
