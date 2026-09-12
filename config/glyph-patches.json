@@ -524,6 +524,7 @@
       {"index":"0x21F","source":"曜","target":"요"}
     ],
     "kanji_onreading_remaining_confident": [
+      {"index":"0x0EE","source":"工","target":"공"},
       {"index":"0x125","source":"陣","target":"진"},
       {"index":"0x1EF","source":"邦","target":"방"},
       {"index":"0x237","source":"退","target":"퇴"}
