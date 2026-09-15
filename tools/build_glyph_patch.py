@@ -85,6 +85,9 @@ def main() -> None:
         (ROOT / "config/small-font-source.json").read_text(encoding="utf-8")
     )
     patch_config = json.loads((ROOT / "config/glyph-patches.json").read_text(encoding="utf-8"))
+    small_patch_config = json.loads(
+        (ROOT / "config/small-glyph-patches.json").read_text(encoding="utf-8")
+    )
     source = args.source.read_bytes()
     if sha256(source) != source_config["sha256"]:
         raise SystemExit("Japanese source hash mismatch")
@@ -112,6 +115,9 @@ def main() -> None:
             "unsafe 8x8 record code(s): "
             + ", ".join(f"0x{index:02X}" for index in unsafe_small)
         )
+    small_targets = {
+        int(item["index"], 0): item for item in small_patch_config["patches"]
+    }
 
     font_base = int(patch_config["font_base"], 0)
     glyph_bytes = int(patch_config["glyph_bytes"])
@@ -145,25 +151,35 @@ def main() -> None:
         # glyphs (codes 00-A8).  Codes A7 and above remain prohibited in text
         # records because runtime tests proved control/multibyte collisions.
         # Never mirror 16x16 patches into this bank implicitly.
-        if index in small_font_indices:
-            small_start = 0x3850E + index * 8
-            small_end = small_start + 8
-            rom[small_start:small_end] = render_small_glyph(
-                patch["target"], small_font_path
-            )
-            changed_ranges.append({
-                "font": "8x8",
-                "source": patch["source"], "target": patch["target"],
-                "index": f"0x{index:03X}", "start": f"0x{small_start:06X}",
-                "end_exclusive": f"0x{small_end:06X}"
-            })
+    selected_small: dict[int, dict[str, str]] = dict(small_targets)
+    for patch in patches:
+        index = int(patch["index"], 0)
+        if index < 0xA7:
+            selected_small.setdefault(index, patch)
 
-    missing_small = sorted(small_font_indices - set(seen))
+    missing_small = sorted(small_font_indices - set(selected_small))
     if missing_small:
         raise SystemExit(
             "requested 8x8 index has no selected glyph patch: "
             + ", ".join(f"0x{index:02X}" for index in missing_small)
         )
+
+    small_base = int(small_patch_config["font_base"], 0)
+    small_bytes = int(small_patch_config["glyph_bytes"])
+    for index in sorted(small_font_indices):
+        patch = selected_small[index]
+        small_start = small_base + index * small_bytes
+        small_end = small_start + small_bytes
+        replacement = render_small_glyph(patch["target"], small_font_path)
+        if len(replacement) != small_bytes:
+            raise SystemExit("rendered 8x8 glyph has unexpected size")
+        rom[small_start:small_end] = replacement
+        changed_ranges.append({
+            "font": "8x8",
+            "source": patch["source"], "target": patch["target"],
+            "index": f"0x{index:03X}", "start": f"0x{small_start:06X}",
+            "end_exclusive": f"0x{small_end:06X}"
+        })
 
     checksum = genesis_checksum(rom)
     rom[0x18E:0x190] = checksum.to_bytes(2, "big")
