@@ -11,9 +11,10 @@ from pathlib import Path
 
 
 FONT_BASE = 0x3850E
-FONT_SIZE = 0xA90
+FONT_SIZE = 0x548
 GLYPH_SIZE = 8
-SAFE_CODE_END = 0xA7  # A7-FF are unsafe control/multibyte values.
+UPLOADED_CODE_END = 0xA9  # Physical glyph slots 0x00-0xA8.
+SAFE_CODE_END = 0xA7  # Record bytes 0xA7-0xFF are unsafe control/multibyte values.
 
 
 def load_usage(path: Path) -> dict[int, int]:
@@ -82,6 +83,7 @@ def main() -> None:
         "font_size": FONT_SIZE,
         "glyph_size": GLYPH_SIZE,
         "glyph_count": len(glyphs),
+        "uploaded_code_range": "0x00-0xA8",
         "audited_safe_range": "0x00-0xA6",
         "excluded_range": "0xA7-0xFF",
         "font_pointer_refs": pointer_refs,
@@ -96,9 +98,10 @@ def main() -> None:
         "# Original 8x8 font safety audit",
         "",
         f"- ROM SHA-256: `{report['rom_sha256']}`",
-        f"- Font: `{report['font_base']}` / `{FONT_SIZE:#x}` bytes / {len(glyphs)} glyphs",
+        f"- Uploaded font block: `{report['font_base']}` / `{FONT_SIZE:#x}` bytes / {len(glyphs)} glyphs (`0x00-0xA8`)",
         "- Renderer-safe audit range: `0x00-0xA6`",
         "- Hard exclusion: `0xA7-0xFF` (control/multibyte regression proven)",
+        "- 68K proof: loaders at `0x0081FE` and `0x0106AC` pass `D3=0x547`; the upload loop consumes `D3+1=0x548` bytes",
         f"- Direct ROM pointer references: {', '.join(pointer_refs) or 'none'}",
         f"- Codes unused by the known unit+armament tables: {len(candidates)}",
         f"- Blank codes among those candidates: {len(blank)}",

@@ -1,9 +1,10 @@
 # Original 8x8 font safety audit
 
 - ROM SHA-256: `47360B90EE077C2DF7BB8F8BB6F46BBEA25D7E5B1FD975CDF507C1048D80B062`
-- Font: `0x03850E` / `0xa90` bytes / 338 glyphs
+- Uploaded font block: `0x03850E` / `0x548` bytes / 169 glyphs (`0x00-0xA8`)
 - Renderer-safe audit range: `0x00-0xA6`
 - Hard exclusion: `0xA7-0xFF` (control/multibyte regression proven)
+- 68K proof: loaders at `0x0081FE` and `0x0106AC` pass `D3=0x547`; the upload loop consumes `D3+1=0x548` bytes
 - Direct ROM pointer references: 0x008146, 0x008200, 0x0106AE
 - Codes unused by the known unit+armament tables: 20
 - Blank codes among those candidates: 0

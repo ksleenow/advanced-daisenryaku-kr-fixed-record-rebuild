@@ -71,7 +71,12 @@ def main() -> None:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--group", action="append", required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--include-small-font", action="store_true")
+    parser.add_argument(
+        "--small-font-index",
+        action="append",
+        default=[],
+        help="explicit record-safe 8x8 glyph index (repeatable; 0x00-0xA6 only)",
+    )
     args = parser.parse_args()
 
     source_config = json.loads((ROOT / "config/source.json").read_text(encoding="utf-8"))
@@ -99,6 +104,14 @@ def main() -> None:
             patches.extend(patch_config["groups"][group])
         except KeyError as error:
             raise SystemExit(f"unknown glyph group: {group}") from error
+
+    small_font_indices = {int(value, 0) for value in args.small_font_index}
+    unsafe_small = sorted(index for index in small_font_indices if not 0 <= index < 0xA7)
+    if unsafe_small:
+        raise SystemExit(
+            "unsafe 8x8 record code(s): "
+            + ", ".join(f"0x{index:02X}" for index in unsafe_small)
+        )
 
     font_base = int(patch_config["font_base"], 0)
     glyph_bytes = int(patch_config["glyph_bytes"])
@@ -128,10 +141,11 @@ def main() -> None:
             "index": f"0x{index:03X}", "start": f"0x{start:06X}",
             "end_exclusive": f"0x{end:06X}"
         })
-        # Only the first 0x800 bytes are 8x8 glyphs (codes 00-FF).  The
-        # remaining 0x290-byte DMA tail contains battle-display tiles and must
-        # remain byte-identical to the Japanese original.
-        if args.include_small_font and index < 0x100:
+        # The original 68K loaders upload exactly 0x548 bytes: 169 compact
+        # glyphs (codes 00-A8).  Codes A7 and above remain prohibited in text
+        # records because runtime tests proved control/multibyte collisions.
+        # Never mirror 16x16 patches into this bank implicitly.
+        if index in small_font_indices:
             small_start = 0x3850E + index * 8
             small_end = small_start + 8
             rom[small_start:small_end] = render_small_glyph(
@@ -143,6 +157,13 @@ def main() -> None:
                 "index": f"0x{index:03X}", "start": f"0x{small_start:06X}",
                 "end_exclusive": f"0x{small_end:06X}"
             })
+
+    missing_small = sorted(small_font_indices - set(seen))
+    if missing_small:
+        raise SystemExit(
+            "requested 8x8 index has no selected glyph patch: "
+            + ", ".join(f"0x{index:02X}" for index in missing_small)
+        )
 
     checksum = genesis_checksum(rom)
     rom[0x18E:0x190] = checksum.to_bytes(2, "big")
