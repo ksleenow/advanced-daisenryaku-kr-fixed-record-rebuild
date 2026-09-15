@@ -3,5 +3,7 @@
   "glyph_bytes": 8,
   "safe_record_range": "0x00-0xA6",
   "reserved_numeric_slots": "0x00-0x09",
-  "patches": []
+  "patches": [
+    { "index": "0x8A", "source": "ン", "target": "응" }
+  ]
 }
