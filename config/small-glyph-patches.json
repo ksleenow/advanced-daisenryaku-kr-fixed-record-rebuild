@@ -2,11 +2,6 @@
   "font_base": "0x3850E",
   "glyph_bytes": 8,
   "safe_record_range": "0x00-0xA6",
-  "patches": [
-    { "index": "0x00", "source": "あ", "target": "아" },
-    { "index": "0x01", "source": "い", "target": "이" },
-    { "index": "0x02", "source": "う", "target": "우" },
-    { "index": "0x03", "source": "え", "target": "에" },
-    { "index": "0x04", "source": "お", "target": "오" }
-  ]
+  "reserved_numeric_slots": "0x00-0x09",
+  "patches": []
 }
