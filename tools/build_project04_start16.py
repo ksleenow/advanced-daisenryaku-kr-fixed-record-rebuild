@@ -30,12 +30,12 @@ FONT_PATH = Path(
 # Japanese source record, four visible cells, natural Korean four-cell layout,
 # and every known direct pointer operand. English records are intentionally absent.
 RECORDS = (
+    ("load", 0x0EF456, ("로", "-", "도", " "), (0x006220,)),
     ("sound", 0x0EF428, ("사", "운", "드", " "), (0x006234, 0x010176, 0x011EDA)),
     ("control", 0x0EF42D, (" ", "조", "작", " "), (0x00623E, 0x010180)),
     ("search", 0x0EF433, (" ", "색", "적", " "), (0x006248, 0x01018A)),
     ("weather", 0x0EF43A, (" ", "날", "씨", " "), (0x006252, 0x010194, 0x010F30)),
     ("system", 0x0EF441, ("시", "스", "템", " "), (0x00625C, 0x01019E, 0x0124C0)),
-    ("game", 0x0EF446, ("게", "임", " ", " "), (0x011EC8,)),
 )
 
 
@@ -94,7 +94,7 @@ def main() -> None:
     characters = []
     for _, _, cells, _ in RECORDS:
         for character in cells:
-            if character != " " and character not in characters:
+            if character not in (" ", "-") and character not in characters:
                 characters.append(character)
     glyph_indices = {character: 0x240 + i for i, character in enumerate(characters)}
     expansion_ranges = [
@@ -118,7 +118,12 @@ def main() -> None:
     for name, original, cells, refs in RECORDS:
         payload = bytearray((len(cells) - 1,))
         for cell in cells:
-            payload.extend(b"\x14" if cell == " " else glyph_code(glyph_indices[cell]))
+            if cell == " ":
+                payload.extend(b"\x14")
+            elif cell == "-":
+                payload.extend(b"\x8C")
+            else:
+                payload.extend(glyph_code(glyph_indices[cell]))
         target = cursor
         rom[target:target + len(payload)] = payload
         expansion_ranges.append((target, len(payload)))
