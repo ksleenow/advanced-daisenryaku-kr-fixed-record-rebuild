@@ -22,3 +22,14 @@
 4. 한 화면씩 적용 및 초기/포커스 인/포커스 아웃/복귀 검증
 5. 최종적으로 패치 파일만 제작
 
+## 기술 문서
+
+- [《슈퍼 대전략》 한글패치 참고 분석](docs/super-daisenryaku-reference-analysis.md)
+  — 같은 메가드라이브 전략 게임의 공개 사례와 본 프로젝트의 실측 자료를
+  비교하고, 별도 한글 폰트 뱅크를 안전하게 검증하는 절차를 정리했다.
+- [8x8 폰트 안전성 조사](docs/8x8-font-audit.md)
+- [고정 레코드 번역 원장](docs/translation-ledger.md)
+- [실패 사례: 8x8 `0xA7` 이상 제어 코드 충돌](docs/failed-experiment-8x8-a7-control-codes.md)
+
+문서는 구조와 검증 방법만 제공한다. 원본 ROM, 원본 게임 자산, 완성 ROM,
+사용자 제공 폰트는 저장소에 포함하지 않는다.
