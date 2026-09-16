@@ -30,7 +30,7 @@ FONT_PATH = Path(
 # Japanese source record, four visible cells, natural Korean four-cell layout,
 # and every known direct pointer operand. English records are intentionally absent.
 RECORDS = (
-    ("load", 0x0EF456, ("로", "-", "도", " "), (0x006220,)),
+    ("load", 0x0EF456, ("시", "나", "리", "오"), (0x006220,)),
     ("sound", 0x0EF428, ("사", "운", "드", " "), (0x006234, 0x010176, 0x011EDA)),
     ("control", 0x0EF42D, (" ", "조", "작", " "), (0x00623E, 0x010180)),
     ("search", 0x0EF433, (" ", "색", "적", " "), (0x006248, 0x01018A)),
