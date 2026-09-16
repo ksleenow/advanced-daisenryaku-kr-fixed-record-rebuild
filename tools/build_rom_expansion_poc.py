@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from build_glyph_patch import render_glyph
+
 
 V029_SHA256 = "93AB33A6CA42A52747670B314DCF8A2D3BBB90777D6DD6F3FD32181059471939"
 SOURCE_SIZE = 0x100000
@@ -20,6 +22,11 @@ FONT8_SIZE = 0x548  # 169 glyphs * 8 bytes
 FONT8_CLONE = 0x105000
 FONT16_POINTER_OFFSET = 0x0081E2
 FONT8_POINTER_OFFSETS = (0x008146, 0x008200, 0x0106AE)
+DIAGNOSTIC_GLYPH_BASE = FONT16_CLONE + FONT16_SIZE
+DIAGNOSTIC_RECORD = 0x106000
+DIAGNOSTIC_RECORD_POINTER_OFFSET = 0x0117F8
+DIAGNOSTIC_ORIGINAL_RECORD = bytes.fromhex("01 FD 5A FD 5B")
+DIAGNOSTIC_RECORD_BYTES = bytes.fromhex("01 FE 42 FE 43")
 
 
 def sha256(data: bytes) -> str:
@@ -63,6 +70,11 @@ def main() -> None:
         action="store_true",
         help="redirect all three known 8x8 font source pointers to its identical clone",
     )
+    parser.add_argument(
+        "--diagnostic-title",
+        action="store_true",
+        help="add two new 16x16 glyphs and redirect one fixed 2-cell title record",
+    )
     args = parser.parse_args()
 
     source = args.source.read_bytes()
@@ -84,6 +96,8 @@ def main() -> None:
         raise SystemExit("REFUSED: --redirect-font16 requires --clone-fonts")
     if args.redirect_font8 and not args.clone_fonts:
         raise SystemExit("REFUSED: --redirect-font8 requires --clone-fonts")
+    if args.diagnostic_title and not args.redirect_font16:
+        raise SystemExit("REFUSED: --diagnostic-title requires --redirect-font16")
     if args.clone_fonts:
         for name, source_start, size, target_start in (
             ("16x16", FONT16_SOURCE, FONT16_SIZE, FONT16_CLONE),
@@ -136,6 +150,50 @@ def main() -> None:
                 "before": f"0x{FONT8_SOURCE:06X}",
                 "after": f"0x{FONT8_CLONE:06X}",
             })
+    diagnostic_ranges: list[dict[str, object]] = []
+    if args.diagnostic_title:
+        font_path = Path(
+            "R:/advanced-daisenryaku-kr-rebuild/assets/fonts/sources/"
+            "Galmuri14Bitmap-Regular-2.40.3.ttf"
+        )
+        for ordinal, character in enumerate(("시", "험")):
+            start = DIAGNOSTIC_GLYPH_BASE + ordinal * 32
+            glyph = render_glyph(character, font_path)
+            if len(glyph) != 32:
+                raise SystemExit("REFUSED: diagnostic glyph size mismatch")
+            rom[start:start + 32] = glyph
+            diagnostic_ranges.append({
+                "kind": "16x16 diagnostic glyph",
+                "character": character,
+                "glyph_index": f"0x{0x240 + ordinal:03X}",
+                "start": f"0x{start:06X}",
+                "size": 32,
+            })
+        rom[DIAGNOSTIC_RECORD:DIAGNOSTIC_RECORD + 5] = DIAGNOSTIC_RECORD_BYTES
+        diagnostic_ranges.append({
+            "kind": "fixed diagnostic title record",
+            "text": "시험",
+            "start": f"0x{DIAGNOSTIC_RECORD:06X}",
+            "size": 5,
+            "cell_count": 2,
+        })
+        current = int.from_bytes(
+            rom[DIAGNOSTIC_RECORD_POINTER_OFFSET:DIAGNOSTIC_RECORD_POINTER_OFFSET + 4],
+            "big",
+        )
+        if current != 0x0EF423:
+            raise SystemExit("REFUSED: diagnostic title pointer source is unexpected")
+        if source[0x0EF423:0x0EF428] != DIAGNOSTIC_ORIGINAL_RECORD:
+            raise SystemExit("REFUSED: original fixed title record is unexpected")
+        rom[
+            DIAGNOSTIC_RECORD_POINTER_OFFSET:DIAGNOSTIC_RECORD_POINTER_OFFSET + 4
+        ] = DIAGNOSTIC_RECORD.to_bytes(4, "big")
+        pointer_changes.append({
+            "kind": "diagnostic fixed title record",
+            "operand_offset": f"0x{DIAGNOSTIC_RECORD_POINTER_OFFSET:06X}",
+            "before": "0x0EF423",
+            "after": f"0x{DIAGNOSTIC_RECORD:06X}",
+        })
     rom[ROM_END_OFFSET:ROM_END_OFFSET + 4] = TARGET_ROM_END.to_bytes(4, "big")
     checksum = genesis_checksum(rom)
     rom[CHECKSUM_OFFSET:CHECKSUM_OFFSET + 2] = checksum.to_bytes(2, "big")
@@ -152,6 +210,10 @@ def main() -> None:
     if args.redirect_font8:
         for pointer_offset in FONT8_POINTER_OFFSETS:
             allowed_prefix_changes.update(range(pointer_offset, pointer_offset + 4))
+    if args.diagnostic_title:
+        allowed_prefix_changes.update(
+            range(DIAGNOSTIC_RECORD_POINTER_OFFSET, DIAGNOSTIC_RECORD_POINTER_OFFSET + 4)
+        )
     actual_prefix_changes = {
         index
         for index, (before, after) in enumerate(zip(source, rom[:SOURCE_SIZE]))
@@ -169,6 +231,9 @@ def main() -> None:
     for item in cloned_ranges:
         start = int(item["target_start"], 0)
         allowed_expansion.update(range(start, start + int(item["size"])))
+    for item in diagnostic_ranges:
+        start = int(item["start"], 0)
+        allowed_expansion.update(range(start, start + int(item["size"])))
     unexpected_expansion = [
         offset
         for offset in range(SOURCE_SIZE, TARGET_SIZE)
@@ -181,6 +246,9 @@ def main() -> None:
     args.output.write_bytes(rom)
     report = {
         "purpose": (
+            "project-03 isolated new-glyph fixed-record display proof"
+            if diagnostic_ranges
+            else
             "project-03 cloned font addressability proof; no text or VRAM changes"
             if pointer_changes
             else "project-03 locked font clone; no reference or text changes"
@@ -201,7 +269,8 @@ def main() -> None:
         "unexpected_prefix_changes": 0,
         "font_changes": 0,
         "font_clones": cloned_ranges,
-        "record_changes": 0,
+        "diagnostic_ranges": diagnostic_ranges,
+        "record_changes": 1 if diagnostic_ranges else 0,
         "pointer_changes": pointer_changes,
         "code_changes": 0,
     }
