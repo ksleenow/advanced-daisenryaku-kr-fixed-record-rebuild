@@ -35,6 +35,7 @@ RECORDS = (
     # moving the cursor away cannot restore the stock katakana glyphs.
     ("game_load", 0x0EF452, ("읽", "기", " "), (0x011842,)),
     ("load", 0x0EF456, ("시", "나", "리", "오"), (0x006220,)),
+    ("situation", 0x0EF3E6, ("상", "황", "표", " "), (0x00622A,)),
     ("sound", 0x0EF428, ("사", "운", "드", " "), (0x006234, 0x010176, 0x011EDA)),
     ("control", 0x0EF42D, (" ", "조", "작", " "), (0x00623E, 0x010180)),
     ("search", 0x0EF433, (" ", "색", "적", " "), (0x006248, 0x01018A)),
@@ -55,6 +56,13 @@ RECORDS = (
     ("save_number_title", 0x0EF468, ("저", "장", " ", "N", "o", ".", "선", "택"), (0x011AB0,)),
     ("load_number_title", 0x0EF473, ("읽", "기", " ", "N", "o", ".", "선", "택"), (0x00603E, 0x0118F4)),
     ("scenario_edit", 0x0EF485, ("에", "디", "트", " "), (0x006270,)),
+    # The situation screen draws 作戦 and 目標 with two consecutive renderer
+    # calls while preserving A0 between them.  Keep these as adjacent two-cell
+    # records and redirect only the first pointer operand.
+    ("operation", 0x0EF5B9, ("작", "전"), (0x010CDC,)),
+    ("objective", 0x0EF5BC, ("목", "표"), ()),
+    # 占 領 状 態 is a seven-cell record with the original interstitial spaces.
+    ("occupation_state", 0x0EF5C1, ("점", " ", "령", " ", "상", " ", "태"), (0x010CF6,)),
 )
 
 
