@@ -16,12 +16,12 @@ FONT16_SIZE = 0x4800
 FONT16_CLONE = 0x100000
 FONT8_SOURCE = 0x03850E
 FONT8_SIZE = 0x548
-FONT8_CLONE = 0x105000
+FONT8_CLONE = 0x110000
 FONT16_POINTER_OFFSET = 0x0081E2
 FONT8_POINTER_OFFSETS = (0x008146, 0x008200, 0x0106AE)
 CHECKSUM_OFFSET = 0x18E
 ROM_END_OFFSET = 0x1A4
-RECORD_BASE = 0x106100
+RECORD_BASE = 0x120000
 STOCK_CODES = {"N": 0x22, "o": 0x3D, ".": 0x9B}
 FONT_PATH = Path(
     "R:/advanced-daisenryaku-kr-rebuild/assets/fonts/sources/"
@@ -63,6 +63,15 @@ RECORDS = (
     ("objective", 0x0EF5BC, ("목", "표"), ()),
     # 占 領 状 態 is a seven-cell record with the original interstitial spaces.
     ("occupation_state", 0x0EF5C1, ("점", " ", "령", " ", "상", " ", "태"), (0x010CF6,)),
+    # Situation header fields are independent fixed-width records.
+    ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
+    ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
+    ("situation_temperate", 0x0EF11B, ("온", "대"), (0x010D02,)),
+    # Development footer records keep their original 4/14-cell geometry.
+    ("development_footer", 0x0EF619, ("개", "발", "화", "면"), (0x00FDD6,)),
+    ("development_type_select", 0x0EF622,
+     ("개", "발", "화", "면", " ", "병", "기", "종", "류", "선", "택", " ", " ", " "),
+     (0x00FA92,)),
 )
 
 
@@ -131,6 +140,11 @@ def main() -> None:
     glyph_report = []
     for character, index in glyph_indices.items():
         start = FONT16_CLONE + index * 32
+        if start + 32 > FONT8_CLONE:
+            raise SystemExit(
+                f"REFUSED: 16x16 glyph {character!r} at 0x{start:06X} "
+                f"overlaps 8x8 font bank at 0x{FONT8_CLONE:06X}"
+            )
         bitmap = render_glyph(character, FONT_PATH)
         rom[start:start + 32] = bitmap
         expansion_ranges.append((start, 32))
@@ -192,6 +206,10 @@ def main() -> None:
     ]
     if unexpected_expansion:
         raise SystemExit("REFUSED: undeclared expansion data")
+    if rom[FONT8_CLONE:FONT8_CLONE + FONT8_SIZE] != source[FONT8_SOURCE:FONT8_SOURCE + FONT8_SIZE]:
+        raise SystemExit("REFUSED: cloned 8x8 font bank was modified")
+    if cursor > 0x130000:
+        raise SystemExit("REFUSED: expanded records exceeded reserved record bank")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(rom)
