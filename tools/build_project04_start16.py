@@ -54,6 +54,7 @@ RECORDS = (
     ("game_surrender_focused", 0x0EF463, ("항", "복", " "), (0x01184C,)),
     ("save_number_title", 0x0EF468, ("저", "장", " ", "N", "o", ".", "선", "택"), (0x011AB0,)),
     ("load_number_title", 0x0EF473, ("읽", "기", " ", "N", "o", ".", "선", "택"), (0x00603E, 0x0118F4)),
+    ("scenario_edit", 0x0EF485, ("에", "디", "트", " "), (0x006270,)),
 )
 
 
