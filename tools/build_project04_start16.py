@@ -22,7 +22,7 @@ FONT8_POINTER_OFFSETS = (0x008146, 0x008200, 0x0106AE)
 CHECKSUM_OFFSET = 0x18E
 ROM_END_OFFSET = 0x1A4
 RECORD_BASE = 0x120000
-STOCK_CODES = {"N": 0x22, "o": 0x3D, ".": 0x9B}
+STOCK_CODES = {"N": 0x22, "o": 0x3D, ".": 0x9B, "1": 0x01, "2": 0x02, "3": 0x03}
 FONT_PATH = Path(
     "R:/advanced-daisenryaku-kr-rebuild/assets/fonts/sources/"
     "Galmuri14Bitmap-Regular-2.40.3.ttf"
@@ -72,6 +72,13 @@ RECORDS = (
     ("development_type_select", 0x0EF622,
      ("개", "발", "화", "면", " ", "병", "기", "종", "류", "선", "택", " ", " ", " "),
      (0x00FA92,)),
+    # Unit-selection status records are consumed consecutively from the first
+    # pointer.  Preserve their original 3/3/3/3/2-cell layout and adjacency.
+    ("development_production_none", 0x0EF637, ("생", "산", "무"), (0x00FE22,)),
+    ("development_evolution_1", 0x0EF63C, ("진", "화", "1"), ()),
+    ("development_evolution_2", 0x0EF642, ("진", "화", "2"), ()),
+    ("development_evolution_3", 0x0EF648, ("진", "화", "3"), ()),
+    ("development_selected_title", 0x0EF64E, ("개", "발"), (0x001957, 0x009624)),
 )
 
 
