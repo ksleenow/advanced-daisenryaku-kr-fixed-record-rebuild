@@ -32,7 +32,7 @@ FONT_PATH = Path(
 RECORDS = (
     # ロード has separate ordinary/focused draw paths. Keep both Korean so
     # moving the cursor away cannot restore the stock katakana glyphs.
-    ("load_ordinary", 0x0EF452, ("시", "나", "리", "오"), (0x011842,)),
+    ("game_load", 0x0EF452, ("읽", "기", " "), (0x011842,)),
     ("load", 0x0EF456, ("시", "나", "리", "오"), (0x006220,)),
     ("sound", 0x0EF428, ("사", "운", "드", " "), (0x006234, 0x010176, 0x011EDA)),
     ("control", 0x0EF42D, (" ", "조", "작", " "), (0x00623E, 0x010180)),
@@ -45,6 +45,9 @@ RECORDS = (
     ("weather_rule_row", 0x0EF52D, ("날", "씨", "규", "칙", " ", " "), (0x012420,)),
     ("system_hex_line", 0x0EF4CB, ("헥", "스", "라", "인", " ", " ", " ", " ", " "), (0x01251A,)),
     ("game_save", 0x0EF45B, ("저", "장", " "), (0x011838,)),
+    ("game_title", 0x0EF423, ("게", "임"), (0x0117F8,)),
+    ("game_surrender", 0x0EF45F, ("항", "복"), (0x01186E,)),
+    ("game_surrender_focused", 0x0EF463, ("항", "복", " "), (0x01184C,)),
 )
 
 
