@@ -63,6 +63,18 @@ RECORDS = (
     ("objective", 0x0EF5BC, ("목", "표"), ()),
     # 占 領 状 態 is a seven-cell record with the original interstitial spaces.
     ("occupation_state", 0x0EF5C1, ("점", " ", "령", " ", "상", " ", "태"), (0x010CF6,)),
+    # Situation header fields are drawn independently at fixed coordinates.
+    # Keep every source field's display-cell count unchanged: 晴 is one cell,
+    # so it remains the direct reading 청 rather than widening it to 맑음.
+    ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
+    ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
+    ("situation_temperate", 0x0EF11B, ("온", "대"), (0x010D02,)),
+    # Development overview/detail footers.  These are isolated from the map C
+    # menu and retain the exact 4- and 14-cell geometry of the Japanese records.
+    ("development_footer", 0x0EF619, ("개", "발", "화", "면"), (0x00FDD6,)),
+    ("development_type_select", 0x0EF622,
+     ("개", "발", "화", "면", " ", "병", "기", "종", "류", "선", "택", " ", " ", " "),
+     (0x00FA92,)),
 )
 
 
