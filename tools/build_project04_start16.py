@@ -22,6 +22,7 @@ FONT8_POINTER_OFFSETS = (0x008146, 0x008200, 0x0106AE)
 CHECKSUM_OFFSET = 0x18E
 ROM_END_OFFSET = 0x1A4
 RECORD_BASE = 0x106100
+STOCK_CODES = {"N": 0x22, "o": 0x3D, ".": 0x9B}
 FONT_PATH = Path(
     "R:/advanced-daisenryaku-kr-rebuild/assets/fonts/sources/"
     "Galmuri14Bitmap-Regular-2.40.3.ttf"
@@ -48,6 +49,8 @@ RECORDS = (
     ("game_title", 0x0EF423, ("게", "임"), (0x0117F8,)),
     ("game_surrender", 0x0EF45F, ("항", "복"), (0x01186E,)),
     ("game_surrender_focused", 0x0EF463, ("항", "복", " "), (0x01184C,)),
+    ("save_number_title", 0x0EF468, ("저", "장", " ", "N", "o", ".", "선", "택"), (0x011AB0,)),
+    ("load_number_title", 0x0EF473, ("읽", "기", " ", "N", "o", ".", "선", "택"), (0x00603E, 0x0118F4)),
 )
 
 
@@ -106,7 +109,7 @@ def main() -> None:
     characters = []
     for _, _, cells, _ in RECORDS:
         for character in cells:
-            if character not in (" ", "-") and character not in characters:
+            if character not in (" ", "-") and character not in STOCK_CODES and character not in characters:
                 characters.append(character)
     glyph_indices = {character: 0x240 + i for i, character in enumerate(characters)}
     expansion_ranges = [
@@ -134,6 +137,8 @@ def main() -> None:
                 payload.extend(b"\x14")
             elif cell == "-":
                 payload.extend(b"\x8C")
+            elif cell in STOCK_CODES:
+                payload.append(STOCK_CODES[cell])
             else:
                 payload.extend(glyph_code(glyph_indices[cell]))
         target = cursor
