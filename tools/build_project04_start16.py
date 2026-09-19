@@ -83,7 +83,9 @@ RECORDS = (
     # unrelated screens.  Preserve the stock 4/2/3/2-cell geometry and every
     # direct initial/focus draw reference.
     ("production_screen_title", 0x0EF257, ("생", "산", "화", "면"), (0x00F95A,)),
+    ("production_available", 0x0EF25E, ("가", "용", "자", "금"), (0x00F96C,)),
     ("production_placement", 0x0EF266, ("배", "치"), (0x00F76E, 0x00F97E)),
+    ("production_remaining", 0x0EF26B, ("잔", "여"), (0x00F990,)),
     ("production_ground_initial", 0x0EF270, ("지", "상", " "), (0x00F9C0,)),
     ("production_ground_focused", 0x0EF274, ("지", "상"), (0x00F9AA,)),
     # Situation header fields are independent fixed-width records.
