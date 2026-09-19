@@ -78,6 +78,14 @@ RECORDS = (
     ("type_count_table_title", 0x0EF5EA,
      ("기", " ", "종", " ", "별", " ", "기", " ", "수", " ", "표", " ", " "),
      (0x0110C4,)),
+    # Production screen labels.  These are isolated instead of changing the
+    # shared glyph slots: 画/面 and the ground/placement glyphs are reused by
+    # unrelated screens.  Preserve the stock 4/2/3/2-cell geometry and every
+    # direct initial/focus draw reference.
+    ("production_screen_title", 0x0EF257, ("생", "산", "화", "면"), (0x00F95A,)),
+    ("production_placement", 0x0EF266, ("배", "치"), (0x00F76E, 0x00F97E)),
+    ("production_ground_initial", 0x0EF270, ("지", "상", " "), (0x00F9C0,)),
+    ("production_ground_focused", 0x0EF274, ("지", "상"), (0x00F9AA,)),
     # Situation header fields are independent fixed-width records.
     ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
     ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
