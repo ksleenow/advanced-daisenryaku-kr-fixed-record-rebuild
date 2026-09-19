@@ -22,7 +22,11 @@ FONT8_POINTER_OFFSETS = (0x008146, 0x008200, 0x0106AE)
 CHECKSUM_OFFSET = 0x18E
 ROM_END_OFFSET = 0x1A4
 RECORD_BASE = 0x120000
-STOCK_CODES = {"N": 0x22, "o": 0x3D, ".": 0x9B, "1": 0x01, "2": 0x02, "3": 0x03}
+STOCK_CODES = {
+    "A": 0x15, "C": 0x17,
+    "N": 0x22, "o": 0x3D, ".": 0x9B,
+    "1": 0x01, "2": 0x02, "3": 0x03,
+}
 # Correct two adjacent source-glyph readings in the cloned 16x16 bank.
 # The original audit mislabeled 0x0DE (車) as 重; the actual 重 is 0x0FF.
 FIXED_GLYPH_OVERRIDES = {0x0CD: "전", 0x0DE: "차", 0x0FF: "중"}
@@ -88,6 +92,17 @@ RECORDS = (
     ("production_remaining", 0x0EF26B, ("잔", "여"), (0x00F990,)),
     ("production_ground_initial", 0x0EF270, ("지", "상", " "), (0x00F9C0,)),
     ("production_ground_focused", 0x0EF274, ("지", "상"), (0x00F9AA,)),
+    # B-button help overlay.  The Japanese records are
+    # `Aボタン 自部隊  Cボタン 速度` and its A/C-swapped form.  Keep the
+    # stock A/C glyphs and the exact 17-cell geometry in both configurations.
+    ("map_help_a_unit_c_speed", 0x0EFAFC,
+     ("A", "버", "튼", " ", " ", "자", "부", "대", " ", " ",
+      "C", "버", "튼", " ", " ", "속", "도"),
+     (0x00A6A8,)),
+    ("map_help_a_speed_c_unit", 0x0EFB13,
+     ("A", "버", "튼", " ", " ", "속", "도", " ", " ",
+      "C", "버", "튼", " ", " ", "자", "부", "대"),
+     (0x00A6B4,)),
     # Situation header fields are independent fixed-width records.
     ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
     ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
