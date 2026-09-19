@@ -25,7 +25,8 @@ RECORD_BASE = 0x120000
 STOCK_CODES = {
     "A": 0x15, "C": 0x17,
     "N": 0x22, "o": 0x3D, ".": 0x9B,
-    "1": 0x01, "2": 0x02, "3": 0x03,
+    "0": 0x00, "1": 0x01, "2": 0x02, "3": 0x03, "4": 0x04,
+    "5": 0x05, "6": 0x06, "7": 0x07, "8": 0x08, "9": 0x09,
 }
 # Correct two adjacent source-glyph readings in the cloned 16x16 bank.
 # The original audit mislabeled 0x0DE (車) as 重; the actual 重 is 0x0FF.
@@ -120,6 +121,67 @@ RECORDS = (
     ("development_evolution_3", 0x0EF648, ("진", "화", "3"), ()),
     ("development_selected_title", 0x0EF64E, ("개", "발"), (0x001957, 0x009624)),
 )
+
+# Runtime error messages.  Every replacement is padded to the exact Japanese
+# record width; overlong text is rejected at import time.  Six stock records
+# have no executable reference in Rev A and intentionally remain untouched.
+ERROR_SPECS = (
+    ("error_01", 0x0EF653, 13, "오류 1 무기 사용 불가", (0x00F56A,)),
+    ("error_02", 0x0EF668, 13, "오류 2 탄약 부족", (0x00F578,)),
+    ("error_03", 0x0EF67E, 15, "오류 3 이 무기 공격불가", (0x00F582,)),
+    ("error_04", 0x0EF695, 11, "오류 4 빈 슬롯없음", (0x00F590,)),
+    ("error_05", 0x0EF6A7, 15, "오류 5 공격용 무기 아님", (0x00F59E,)),
+    ("error_06", 0x0EF6BF, 13, "오류 6 이동후 사용불가", (0x00F5AC,)),
+    ("error_07", 0x0EF6D4, 15, "오류 7 반격 전용 무기", (0x00F5BA,)),
+    ("error_08", 0x0EF6ED, 14, "오류 8 점령 불가", (0x00D0B4,)),
+    ("error_09", 0x0EF703, 14, "오류 9 보급원 없음", (0x00F5C8,)),
+    ("error_10", 0x0EF718, 12, "오류 10 이미 보급함", (0x00F5D6,)),
+    ("error_11", 0x0EF729, 17, "오류 11 여기서 합류 불가", (0x00F5E4,)),
+    ("error_13", 0x0EF75F, 17, "오류 13 여기서 보충 불가", (0x00F5F2,)),
+    ("error_14", 0x0EF77A, 17, "오류 14 보충전 차량 하차", (0x00F600,)),
+    ("error_15", 0x0EF795, 18, "오류 15 핵무기 사용 금지", (0x00F612,)),
+    ("error_16", 0x0EF7B1, 18, "오류 16 핵폭탄 투하 대기중", (0x00D0C2,)),
+    ("error_17", 0x0EF7CC, 15, "오류 17 탄약없어 폭격불가", (0x00D0D0,)),
+    ("error_18", 0x0EF7E1, 14, "오류 18 여기서 폭격불가", (0x00D0DE, 0x00D0EC)),
+    ("error_19", 0x0EF7F4, 17, "오류 19 이동 후 폭격 불가", (0x00D0FA,)),
+    ("error_20", 0x0EF80E, 16, "오류 20 보급없어 생산불가", (0x00D108,)),
+    ("error_22", 0x0EF842, 11, "오류 22 요새화최대", (0x00D116,)),
+    ("error_23", 0x0EF853, 16, "오류 23 여기서 생산 불가", (0x00D124,)),
+    ("error_24", 0x0EF86B, 11, "오류 24 자금 부족", (0x00D132, 0x00F620)),
+    ("error_25", 0x0EF87B, 17, "오류 25 공항없어 하차 불가", (0x00D140,)),
+    ("error_26", 0x0EF894, 15, "오류 26 타군 부대입니다", (0x00D14E,)),
+    ("error_27", 0x0EF8A9, 16, "오류 27 진입 불가", (0x00D15C,)),
+    ("error_29", 0x0EF8DB, 14, "오류 29 적 부대를 선택", (0x00D16A,)),
+    ("error_30", 0x0EF8EE, 11, "오류30경험250필요", (0x00F62E,)),
+    ("error_31", 0x0EF8FE, 15, "오류31 여기서 레벨업불가", (0x00F63C,)),
+    ("error_32", 0x0EF916, 15, "오류 32 여기서 개조불가", (0x00F64A,)),
+    ("error_33", 0x0EF92E, 13, "오류 33 유닛 수 최대", (0x0126B6,)),
+    ("error_36", 0x0EF96A, 15, "오류36 결빙시 사용 불가", (0x00F658,)),
+    ("error_37", 0x0EF981, 15, "오류37 맑을때 지상공격", (0x00F666,)),
+    ("error_38", 0x0EF995, 15, "오류38 맑을때 대공공격", (0x00F678,)),
+    ("error_39", 0x0EF9A9, 15, "오류39 맑음흐림 폭격", (0x00D186,)),
+    ("error_40", 0x0EF9BE, 15, "오류40 맑음흐림 강하", (0x00D194,)),
+    ("error_41", 0x0EF9D3, 17, "오류41 폭풍눈 공격 불가", (0x00F686,)),
+    ("error_42", 0x0EF9EA, 17, "오류42 폭풍눈 강하 불가", (0x00D1A2,)),
+    ("error_43", 0x0EFA01, 17, "오류43 폭풍눈 출격 불가", (0x00D1B0,)),
+    ("error_45", 0x0EFA31, 15, "오류 45 최대 레벨", (0x00F694,)),
+    ("error_46", 0x0EFA48, 15, "오류 46 진화 병기 없음", (0x00F6A2,)),
+    ("error_47", 0x0EFA5F, 15, "오류47 점령중 이동 불가", (0x00D178,)),
+    ("error_48", 0x0EFA77, 17, "오류 48 시간 변경 불가", (0x0126C6,)),
+    ("error_49", 0x0EFA8D, 15, "오류 49 개조 병기 없음", (0x00F6B0,)),
+)
+
+for error_name, error_source, error_width, error_text, error_refs in ERROR_SPECS:
+    if len(error_text) > error_width:
+        raise ValueError(
+            f"{error_name} exceeds fixed width: {len(error_text)} > {error_width}"
+        )
+    RECORDS += ((
+        error_name,
+        error_source,
+        tuple(error_text.ljust(error_width)),
+        error_refs,
+    ),)
 
 
 def sha256(data: bytes) -> str:
