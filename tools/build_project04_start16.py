@@ -25,7 +25,13 @@ RECORD_BASE = 0x120000
 STOCK_CODES = {"N": 0x22, "o": 0x3D, ".": 0x9B, "1": 0x01, "2": 0x02, "3": 0x03}
 # Correct two adjacent source-glyph readings in the cloned 16x16 bank.
 # The original audit mislabeled 0x0DE (車) as 重; the actual 重 is 0x0FF.
-FIXED_GLYPH_OVERRIDES = {0x0DE: "차", 0x0FF: "중"}
+FIXED_GLYPH_OVERRIDES = {0x0CD: "전", 0x0DE: "차", 0x0FF: "중"}
+DEV_TRANSITION_EXIT = 0x1BCC60
+DEV_TRANSITION_ENTRY = 0x1BCCB0
+DEV_TRANSITION_EXIT_HOOK = 0x00FDB2
+DEV_TRANSITION_ENTRY_HOOK = 0x00FDBE
+DEV_TRANSITION_FOOTER_SUPPRESS = 0x00FDDA
+DEV_TRANSITION_CATEGORY_SUPPRESS = 0x00FDF6
 FONT_PATH = Path(
     "R:/advanced-daisenryaku-kr-rebuild/assets/fonts/sources/"
     "Galmuri14Bitmap-Regular-2.40.3.ttf"
@@ -48,6 +54,8 @@ RECORDS = (
     ("search_level_row", 0x0EF50A, ("색", "적", "레", "벨", " ", " ", " "), (0x01231A,)),
     ("weather_title", 0x0EF525, ("날", "씨", "설", "정"), (0x0123D6,)),
     ("weather_rule_row", 0x0EF52D, ("날", "씨", "규", "칙", " ", " "), (0x012420,)),
+    # 都市 収入 is six fixed cells including its trailing blank.
+    ("income_title", 0x0EF536, ("도", "시", " ", "수", "입", " "), (0x0103AC,)),
     ("system_battle_speed", 0x0EF4BD, ("전", "투", "화", "면", "속", "도", " ", " ", " "), (0x01250C,)),
     ("system_hex_line", 0x0EF4CB, ("헥", "스", "라", "인", " ", " ", " ", " ", " "), (0x01251A,)),
     ("system_enemy_performance", 0x0EF4D5, ("적", "유", "닛", "성", "능", "표", " ", " ", " "), (0x012528,)),
@@ -172,7 +180,9 @@ def main() -> None:
 
     cursor = RECORD_BASE
     record_report = []
+    record_addresses = {}
     for name, original, cells, refs in RECORDS:
+        record_addresses[name] = cursor
         payload = bytearray((len(cells) - 1,))
         for cell in cells:
             if cell == " ":
@@ -198,6 +208,46 @@ def main() -> None:
             "pointer_operands": [f"0x{x:06X}" for x in refs],
         })
         cursor += len(payload)
+
+    # The stock detail transition draws its footer/category before the new
+    # background art has finished replacing the previous screen.  Port the
+    # user-accepted VRAM-clean ordering from the 2026-09-01 checkpoint: clear
+    # only the two stale footer tile-map rows on entry, suppress both early
+    # text draws, then redraw the footer and dynamic category after the art.
+    entry_program = bytes.fromhex(
+        "2F0723FC6C0C000300C000047E1F33FC002400C0000051CFFFF6"
+        "23FC6C8C000300C000047E1F33FC002400C0000051CFFFF62E1F"
+        "31FCA152CD044EF90000FDC4"
+    )
+    footer_address = record_addresses["development_footer"]
+    exit_program = (
+        bytes.fromhex("2F002F082F092F0E43F900FF8B84")
+        + bytes.fromhex("41F9") + footer_address.to_bytes(4, "big")
+        + bytes.fromhex(
+            "4EB90000816670003038CDC2C0FC000743F900FF8B9841F9000237C6"
+            "D1C04EB9000081662C5F225F205F201F11FC0001CDA04E75"
+        )
+    )
+    transition_patches = (
+        (DEV_TRANSITION_ENTRY, entry_program, b"\xFF" * len(entry_program)),
+        (DEV_TRANSITION_EXIT, exit_program, b"\xFF" * len(exit_program)),
+        (DEV_TRANSITION_ENTRY_HOOK, bytes.fromhex("4EF9001BCCB0"), bytes.fromhex("31FCA152CD04")),
+        (DEV_TRANSITION_EXIT_HOOK, bytes.fromhex("4EB9001BCC60"), bytes.fromhex("11FC0001CDA0")),
+        (DEV_TRANSITION_FOOTER_SUPPRESS, bytes.fromhex("4E714E714E71"), bytes.fromhex("4EB900008166")),
+        (DEV_TRANSITION_CATEGORY_SUPPRESS, bytes.fromhex("4E714E714E71"), bytes.fromhex("4EB900008166")),
+    )
+    for offset, replacement, expected in transition_patches:
+        current = bytes(rom[offset:offset + len(replacement)])
+        if current != expected:
+            raise SystemExit(
+                f"REFUSED: development transition bytes at 0x{offset:06X} "
+                f"are {current.hex().upper()}, expected {expected.hex().upper()}"
+            )
+        rom[offset:offset + len(replacement)] = replacement
+        if offset < SOURCE_SIZE:
+            allowed_prefix.update(range(offset, offset + len(replacement)))
+        else:
+            expansion_ranges.append((offset, len(replacement)))
 
     rom[ROM_END_OFFSET:ROM_END_OFFSET + 4] = (TARGET_SIZE - 1).to_bytes(4, "big")
     checksum = genesis_checksum(rom)
