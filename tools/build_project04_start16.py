@@ -23,6 +23,9 @@ CHECKSUM_OFFSET = 0x18E
 ROM_END_OFFSET = 0x1A4
 RECORD_BASE = 0x120000
 STOCK_CODES = {"N": 0x22, "o": 0x3D, ".": 0x9B, "1": 0x01, "2": 0x02, "3": 0x03}
+# Correct two adjacent source-glyph readings in the cloned 16x16 bank.
+# The original audit mislabeled 0x0DE (車) as 重; the actual 重 is 0x0FF.
+FIXED_GLYPH_OVERRIDES = {0x0DE: "차", 0x0FF: "중"}
 FONT_PATH = Path(
     "R:/advanced-daisenryaku-kr-rebuild/assets/fonts/sources/"
     "Galmuri14Bitmap-Regular-2.40.3.ttf"
@@ -74,7 +77,7 @@ RECORDS = (
      (0x00FA92,)),
     # Unit-selection status records are consumed consecutively from the first
     # pointer.  Preserve their original 3/3/3/3/2-cell layout and adjacency.
-    ("development_production_none", 0x0EF637, ("생", "산", "무"), (0x00FE22,)),
+    ("development_production_none", 0x0EF637, ("생", "산", "중"), (0x00FE22,)),
     ("development_evolution_1", 0x0EF63C, ("진", "화", "1"), ()),
     ("development_evolution_2", 0x0EF642, ("진", "화", "2"), ()),
     ("development_evolution_3", 0x0EF648, ("진", "화", "3"), ()),
@@ -110,6 +113,12 @@ def main() -> None:
     rom[FONT8_CLONE:FONT8_CLONE + FONT8_SIZE] = source[
         FONT8_SOURCE:FONT8_SOURCE + FONT8_SIZE
     ]
+
+    # Keep the immutable source untouched.  Correct only the cloned font bank
+    # used by this build so dynamic names such as 軽戦車 render as 경전차.
+    for index, character in FIXED_GLYPH_OVERRIDES.items():
+        start = FONT16_CLONE + index * 32
+        rom[start:start + 32] = render_glyph(character, FONT_PATH)
 
     allowed_prefix = {CHECKSUM_OFFSET, CHECKSUM_OFFSET + 1, *range(ROM_END_OFFSET, ROM_END_OFFSET + 4)}
     pointer_changes = []
