@@ -74,6 +74,10 @@ RECORDS = (
     ("objective", 0x0EF5BC, ("목", "표"), ()),
     # 占 領 状 態 is a seven-cell record with the original interstitial spaces.
     ("occupation_state", 0x0EF5C1, ("점", " ", "령", " ", "상", " ", "태"), (0x010CF6,)),
+    # タイプ別 機数表: preserve the stock 13-cell spaced title geometry.
+    ("type_count_table_title", 0x0EF5EA,
+     ("기", " ", "종", " ", "별", " ", "기", " ", "수", " ", "표", " ", " "),
+     (0x0110C4,)),
     # Situation header fields are independent fixed-width records.
     ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
     ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
