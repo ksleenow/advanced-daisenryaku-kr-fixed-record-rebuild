@@ -31,12 +31,85 @@ RESOURCE_LOGO_DIR = Path("assets/resource-logo")
 CREDIT_HELPER = 0x1E8000
 CREDIT_RECORD_BASE = 0x1E8100
 TIMELINE_BASE = 0x1EA000
+BRIEFING_TRANSLATIONS = Path("assets/campaign-briefings-ko.json")
+BRIEFING_ORIGINAL_BASE = 0x023EB6
+BRIEFING_RELOCATED_BASE = 0x140000
+BRIEFING_POINTER_OFFSET = 0x00230E
+BRIEFING_OFFSET_TABLE = 0x023E5E
+BRIEFING_SCENARIO_COUNT = 44
 STOCK_CODES = {
     "A": 0x15, "C": 0x17,
     "N": 0x22, "o": 0x3D, ".": 0x9B,
     "0": 0x00, "1": 0x01, "2": 0x02, "3": 0x03, "4": 0x04,
     "5": 0x05, "6": 0x06, "7": 0x07, "8": 0x08, "9": 0x09,
 }
+
+
+def decompress_lzss(data: bytes, address: int) -> tuple[bytes, int]:
+    pos = address
+    token_count = int.from_bytes(data[pos:pos + 2], "big") + 1
+    pos += 2
+    window = bytearray(0x1000)
+    write_pos = 0xFEE
+    output = bytearray()
+    flags = 0
+    bits_left = 0
+    for _ in range(token_count):
+        if bits_left == 0:
+            flags = data[pos]
+            pos += 1
+            bits_left = 8
+        literal = bool(flags & 0x80)
+        flags = (flags << 1) & 0xFF
+        bits_left -= 1
+        if literal:
+            value = data[pos]
+            pos += 1
+            output.append(value)
+            window[write_pos] = value
+            write_pos = (write_pos + 1) & 0xFFF
+        else:
+            pair = int.from_bytes(data[pos:pos + 2], "big")
+            pos += 2
+            read_pos = pair >> 4
+            length = (pair & 0xF) + 3
+            for _ in range(length):
+                value = window[read_pos]
+                read_pos = (read_pos + 1) & 0xFFF
+                output.append(value)
+                window[write_pos] = value
+                write_pos = (write_pos + 1) & 0xFFF
+    return bytes(output), pos
+
+
+def compress_lzss_literals(data: bytes) -> bytes:
+    if not data or len(data) > 0x10000:
+        raise ValueError(f"briefing stream cannot be encoded: {len(data)} bytes")
+    output = bytearray((len(data) - 1).to_bytes(2, "big"))
+    for start in range(0, len(data), 8):
+        chunk = data[start:start + 8]
+        output.append((0xFF << (8 - len(chunk))) & 0xFF)
+        output.extend(chunk)
+    return bytes(output)
+
+
+def skip_glyph(data: bytes, pos: int) -> int:
+    return pos + (1 if data[pos] < 0xFD else 2)
+
+
+def record_controls(data: bytes, start: int) -> tuple[list[int], int]:
+    controls = []
+    pos = start
+    for _ in range(256):
+        control = data[pos]
+        pos += 1
+        controls.append(control)
+        if not control & 0x80:
+            for _ in range((control & 0x3F) + 1):
+                pos = skip_glyph(data, pos)
+        if control & 0x40:
+            return controls, pos
+    raise ValueError(f"unterminated briefing record at 0x{start:04X}")
 # Korean glyphs already present in the approved v029 16x16 bank.  Reusing
 # these audited slots keeps the expanded-code namespace small and leaves the
 # immutable source bank untouched.
@@ -267,9 +340,11 @@ def sha256(data: bytes) -> str:
 
 
 def glyph_code(index: int) -> bytes:
-    if not 0x240 <= index <= 0x2FC:
+    if not 0x240 <= index <= 0x3FC:
         raise ValueError(f"expanded glyph index out of range: 0x{index:03X}")
-    return bytes((0xFE, index - 0x1FD))
+    if index <= 0x2FC:
+        return bytes((0xFE, index - 0x1FD))
+    return bytes((0xFF, index - 0x2FD))
 
 
 def baseline_glyph_code(index: int) -> bytes:
@@ -299,6 +374,9 @@ def main() -> None:
     rom[FONT8_CLONE:FONT8_CLONE + FONT8_SIZE] = source[
         FONT8_SOURCE:FONT8_SOURCE + FONT8_SIZE
     ]
+    briefings = json.loads(BRIEFING_TRANSLATIONS.read_text(encoding="utf-8"))
+    if len(briefings) != BRIEFING_SCENARIO_COUNT:
+        raise SystemExit(f"REFUSED: expected 44 briefing translations, got {len(briefings)}")
 
     # Keep the immutable source untouched.  Correct only the cloned font bank
     # used by this build so dynamic names such as 軽戦車 render as 경전차.
@@ -337,6 +415,7 @@ def main() -> None:
     supplemental_text = "".join(CREDIT_LINES)
     for _, _, _, first, second in TIMELINE_SPECS:
         supplemental_text += first + (second or "")
+    supplemental_text += "".join(row for entry in briefings for row in entry["rows"])
     for character in supplemental_text:
         if (
             character not in (" ", "-")
@@ -378,6 +457,10 @@ def main() -> None:
                 payload.append(0x14)
             elif cell == "-":
                 payload.append(0x8C)
+            elif cell == "－":
+                payload.append(0x9D)
+            elif cell == "/":
+                payload.append(0x9E)
             elif cell == "·":
                 payload.extend(glyph_code(glyph_indices[cell]))
             elif cell in STOCK_CODES:
@@ -476,6 +559,120 @@ def main() -> None:
             "second": second,
             "second_record": f"0x{second_target:06X}" if second_target else None,
         })
+
+    # Campaign briefings are a compressed stream with a fixed 44-entry offset
+    # table.  Rebuild each record inside its original span, preserving the
+    # Japanese row/page topology and the deliberate scenario-13/43 sharing.
+    original_briefing, original_briefing_end = decompress_lzss(
+        source, BRIEFING_ORIGINAL_BASE
+    )
+    briefing_unpacked = bytearray(original_briefing)
+    briefing_offsets = [
+        int.from_bytes(
+            source[
+                BRIEFING_OFFSET_TABLE + scenario * 2:
+                BRIEFING_OFFSET_TABLE + scenario * 2 + 2
+            ],
+            "big",
+        )
+        for scenario in range(BRIEFING_SCENARIO_COUNT)
+    ]
+    unique_offsets = sorted(set(briefing_offsets))
+    rebuilt_by_offset = {}
+    briefing_report = []
+    for scenario, entry in enumerate(briefings):
+        if int(entry["scenario"]) != scenario:
+            raise SystemExit(f"REFUSED: briefing entry {scenario} has wrong scenario id")
+        offset = briefing_offsets[scenario]
+        shared_scenarios = [
+            index for index, value in enumerate(briefing_offsets) if value == offset
+        ]
+        if offset in rebuilt_by_offset:
+            first_scenario = rebuilt_by_offset[offset]["scenario"]
+            if entry["rows"] != briefings[first_scenario]["rows"]:
+                raise SystemExit(
+                    f"REFUSED: shared briefing {first_scenario}/{scenario} differs"
+                )
+            briefing_report.append({
+                "scenario": scenario,
+                "offset": f"0x{offset:04X}",
+                "shared_with": first_scenario,
+                "rows": entry["rows"],
+            })
+            continue
+
+        controls, _ = record_controls(original_briefing, offset)
+        text_slots = sum(1 for control in controls if not control & 0x80)
+        if len(entry["rows"]) > text_slots:
+            raise SystemExit(
+                f"REFUSED: briefing {scenario} needs {len(entry['rows'])} rows, "
+                f"original has {text_slots}"
+            )
+        rebuilt = bytearray()
+        translated_index = 0
+        for control in controls:
+            if control & 0x80:
+                rebuilt.append(control)
+                continue
+            text = (
+                entry["rows"][translated_index]
+                if translated_index < len(entry["rows"])
+                else " "
+            )
+            translated_index += 1
+            if not 1 <= len(text) <= 20:
+                raise SystemExit(
+                    f"REFUSED: briefing {scenario} row width {len(text)}: {text!r}"
+                )
+            encoded = bytearray(encode_cells(text))
+            encoded[0] = (encoded[0] & 0x3F) | (control & 0x40)
+            rebuilt.extend(encoded)
+        next_offsets = [value for value in unique_offsets if value > offset]
+        capacity_end = next_offsets[0] if next_offsets else len(briefing_unpacked)
+        capacity = capacity_end - offset
+        if len(rebuilt) > capacity:
+            raise SystemExit(
+                f"REFUSED: briefing {scenario} uses {len(rebuilt)} > {capacity} bytes"
+            )
+        briefing_unpacked[offset:offset + len(rebuilt)] = rebuilt
+        rebuilt_by_offset[offset] = {"scenario": scenario, "bytes": bytes(rebuilt)}
+        briefing_report.append({
+            "scenario": scenario,
+            "offset": f"0x{offset:04X}",
+            "shared_scenarios": shared_scenarios,
+            "original_controls": [f"0x{control:02X}" for control in controls],
+            "text_slots": text_slots,
+            "translated_rows": len(entry["rows"]),
+            "encoded_size": len(rebuilt),
+            "capacity": capacity,
+            "rows": entry["rows"],
+        })
+
+    briefing_packed = compress_lzss_literals(bytes(briefing_unpacked))
+    if BRIEFING_RELOCATED_BASE + len(briefing_packed) > 0x148000:
+        raise SystemExit("REFUSED: relocated briefing stream exceeds reserved bank")
+    rom[
+        BRIEFING_RELOCATED_BASE:
+        BRIEFING_RELOCATED_BASE + len(briefing_packed)
+    ] = briefing_packed
+    expansion_ranges.append((BRIEFING_RELOCATED_BASE, len(briefing_packed)))
+    redirect(
+        BRIEFING_POINTER_OFFSET,
+        BRIEFING_ORIGINAL_BASE,
+        BRIEFING_RELOCATED_BASE,
+        "campaign briefing compressed stream",
+    )
+    verified_briefing, verified_end = decompress_lzss(rom, BRIEFING_RELOCATED_BASE)
+    if verified_briefing != bytes(briefing_unpacked):
+        raise SystemExit("REFUSED: relocated briefing decompression mismatch")
+    if verified_end != BRIEFING_RELOCATED_BASE + len(briefing_packed):
+        raise SystemExit("REFUSED: relocated briefing packed-size mismatch")
+    for offset, rebuilt_entry in rebuilt_by_offset.items():
+        expected = rebuilt_entry["bytes"]
+        if verified_briefing[offset:offset + len(expected)] != expected:
+            raise SystemExit(
+                f"REFUSED: briefing {rebuilt_entry['scenario']} decode mismatch"
+            )
 
     # The stock detail transition draws its footer/category before the new
     # background art has finished replacing the previous screen.  Port the
@@ -615,7 +812,7 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(rom)
     report = {
-        "purpose": "project-04 16x16 start/pre-game menu records",
+        "purpose": "project-05 fixed-layout campaign briefing records",
         "source_sha256": sha256(source),
         "output_sha256": sha256(rom),
         "size": len(rom),
@@ -632,6 +829,14 @@ def main() -> None:
             "helper": f"0x{CREDIT_HELPER:06X}",
         },
         "timeline": timeline_report,
+        "campaign_briefings": {
+            "source_base": f"0x{BRIEFING_ORIGINAL_BASE:06X}",
+            "source_packed_size": original_briefing_end - BRIEFING_ORIGINAL_BASE,
+            "relocated_base": f"0x{BRIEFING_RELOCATED_BASE:06X}",
+            "packed_size": len(briefing_packed),
+            "unpacked_size": len(briefing_unpacked),
+            "records": briefing_report,
+        },
         "pointer_changes": pointer_changes,
     }
     args.output.with_suffix(args.output.suffix + ".build.json").write_text(
