@@ -105,10 +105,19 @@ RECORDS = (
      ("A", "버", "튼", " ", "수", "도", " ", " ",
       "C", "버", "튼", " ", "다", "음", "부", "대", " "),
      (0x00A6B4,)),
-    # Defeat result.  Japanese `あなたの負けです。` is exactly nine cells
-    # (counter 0x08).  Keep the same geometry and redirect its sole known
-    # executable reference; adjacent victory/draw records remain untouched
-    # until their independent call paths are proven.
+    # Surrender/result screen unit.  These four consecutive Japanese records
+    # are selected through the pointer table at 0x00B7A0..0x00B7AC.  Preserve
+    # their respective 6/6/7/9-cell geometry so no result branch can shift the
+    # following record or reuse a stale focused/unfocused drawing path.
+    ("major_victory_result", 0x0EFE49,
+     ("대", "승", "리", " ", " ", " "),
+     (0x00B7A0,)),
+    ("victory_result", 0x0EFE56,
+     ("승", "리", " ", " ", " ", " "),
+     (0x00B7A4,)),
+    ("draw_result", 0x0EFE63,
+     ("무", "승", "부", " ", " ", " ", " "),
+     (0x00B7A8,)),
     ("defeat_result", 0x0EFE71,
      ("당", "신", "의", " ", "패", "배", "입", "니", "다"),
      (0x00B7AC,)),
