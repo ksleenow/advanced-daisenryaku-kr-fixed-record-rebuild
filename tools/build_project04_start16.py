@@ -22,6 +22,12 @@ FONT8_POINTER_OFFSETS = (0x008146, 0x008200, 0x0106AE)
 CHECKSUM_OFFSET = 0x18E
 ROM_END_OFFSET = 0x1A4
 RECORD_BASE = 0x120000
+RESOURCE_LOGO_HELPER = 0x1EF000
+RESOURCE_LOGO_ASSET = 0x1F0000
+RESOURCE_LOGO_POINTER = 0x000640
+RESOURCE_LOGO_HOOK = 0x0006FE
+RESOURCE_LOGO_TOP_MAP = 0x0D5426
+RESOURCE_LOGO_DIR = Path("assets/resource-logo")
 STOCK_CODES = {
     "A": 0x15, "C": 0x17,
     "N": 0x22, "o": 0x3D, ".": 0x9B,
@@ -129,6 +135,13 @@ RECORDS = (
      ("유", "럽", "에", "서", "의", " ", "전", "쟁",
       "은", " ", "끝", "났", "다", " ", " ", " "),
      (0x00187E,)),
+    # Opening-demo message.  The Japanese record is 18 fixed cells and the
+    # approved Korean wording also occupies exactly 18 cells, so the stock
+    # screen position and timing path remain unchanged.
+    ("opening_tragedy_message", 0x0EFB58,
+     ("이", " ", "비", "극", "이", " ", "반", "복", "되", "지", " ",
+      "않", "기", "를", " ", "바", "라", "며"),
+     (0x000746,)),
     # Situation header fields are independent fixed-width records.
     ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
     ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
@@ -358,6 +371,73 @@ def main() -> None:
             raise SystemExit(
                 f"REFUSED: development transition bytes at 0x{offset:06X} "
                 f"are {current.hex().upper()}, expected {expected.hex().upper()}"
+            )
+        rom[offset:offset + len(replacement)] = replacement
+        if offset < SOURCE_SIZE:
+            allowed_prefix.update(range(offset, offset + len(replacement)))
+        else:
+            expansion_ranges.append((offset, len(replacement)))
+
+    # Opening resource-credit screen.  Keep all Japanese magazine-logo art,
+    # replace only the private caption tiles, and draw the two Korean magazine
+    # labels after the stock screen setup.  The helper is assembled here from
+    # reviewed 68000 opcodes; no executable patch is imported from the former
+    # rebuild.
+    logo_asset = (RESOURCE_LOGO_DIR / "logo.nem").read_bytes()
+    top_map = (RESOURCE_LOGO_DIR / "top-caption-map.bin").read_bytes()
+    middle_row = (RESOURCE_LOGO_DIR / "middle-caption-row.bin").read_bytes()
+    bottom_row = (RESOURCE_LOGO_DIR / "bottom-caption-row.bin").read_bytes()
+    if len(top_map) != 72 or len(middle_row) != 44 or len(bottom_row) != 32:
+        raise SystemExit("REFUSED: resource-credit asset geometry changed")
+
+    def words(data: bytes) -> list[int]:
+        return [int.from_bytes(data[i:i + 2], "big") for i in range(0, len(data), 2)]
+
+    middle_words = words(middle_row)
+    bottom_words = words(bottom_row)
+    blank_tile = 0x0101
+    middle_line = [word for word in middle_words if word != blank_tile]
+    bottom_line = [word for word in bottom_words if word != blank_tile]
+    if middle_line != [0x126, 0x127, 0x128, 0x129, 0x12A, 0x12B, 0x12C]:
+        # The two intentional inter-word blanks are restored below.
+        if middle_words[6:15] != [0x126, 0x127, 0x101, 0x128, 0x129, 0x101, 0x12A, 0x12B, 0x12C]:
+            raise SystemExit("REFUSED: middle resource caption mapping changed")
+    if bottom_words[4:11] != [0x12D, 0x12E, 0x101, 0x12F, 0x130, 0x131, 0x132]:
+        raise SystemExit("REFUSED: bottom resource caption mapping changed")
+    caption_lines = (middle_words[6:15], bottom_words[4:11])
+    caption_destinations = (0x00FF981E, 0x00FF9B20)
+    helper = bytearray()
+    helper_data_patches = []
+    for line, destination in zip(caption_lines, caption_destinations):
+        helper.extend(b"\x41\xF9")
+        helper_data_patches.append(len(helper))
+        helper.extend(b"\x00\x00\x00\x00")
+        helper.extend(b"\x43\xF9" + destination.to_bytes(4, "big"))
+        helper.extend(bytes((0x70, len(line) - 1)))
+        helper.extend(b"\x32\xD8\x51\xC8\xFF\xFC")
+    # Restore the stock A1 source pointer consumed immediately after the hook.
+    helper.extend(b"\x43\xF9\x00\x0D\x55\xBE\x4E\x75")
+    if len(helper) & 1:
+        helper.append(0)
+    for line, patch_offset in zip(caption_lines, helper_data_patches):
+        data_address = RESOURCE_LOGO_HELPER + len(helper)
+        helper[patch_offset:patch_offset + 4] = data_address.to_bytes(4, "big")
+        for word in line:
+            helper.extend(word.to_bytes(2, "big"))
+
+    resource_patches = (
+        (RESOURCE_LOGO_POINTER, bytes.fromhex("41F9001F0000"), bytes.fromhex("41F9000D49C8")),
+        (RESOURCE_LOGO_HOOK, bytes.fromhex("4EB9001EF000"), bytes.fromhex("43F9000D55BE")),
+        (RESOURCE_LOGO_TOP_MAP, top_map, source[RESOURCE_LOGO_TOP_MAP:RESOURCE_LOGO_TOP_MAP + len(top_map)]),
+        (RESOURCE_LOGO_HELPER, bytes(helper), b"\xFF" * len(helper)),
+        (RESOURCE_LOGO_ASSET, logo_asset, b"\xFF" * len(logo_asset)),
+    )
+    for offset, replacement, expected in resource_patches:
+        current = bytes(rom[offset:offset + len(replacement)])
+        if current != expected:
+            raise SystemExit(
+                f"REFUSED: resource-credit bytes at 0x{offset:06X} are "
+                f"{current[:16].hex().upper()}, expected {expected[:16].hex().upper()}"
             )
         rom[offset:offset + len(replacement)] = replacement
         if offset < SOURCE_SIZE:
