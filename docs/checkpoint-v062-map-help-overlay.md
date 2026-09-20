@@ -1,11 +1,11 @@
 # v062 map B-button help overlay
 
 - Japanese source records:
-  - `Aボタン 自部隊  Cボタン 速度`
-  - A/C-swapped configuration
+  - `Aボタン 次部隊  Cボタン 首都`
+  - `Aボタン 首都  Cボタン 次部隊`
 - Korean fixed records:
-  - `A버튼  자부대  C버튼  속도`
-  - A/C-swapped configuration
+  - `A버튼 다음부대  C버튼 수도 `
+  - `A버튼 수도  C버튼 다음부대 `
 - Both records remain exactly 17 cells.
 - Stock `A` and `C` glyphs are preserved because they are English in the
   Japanese original.

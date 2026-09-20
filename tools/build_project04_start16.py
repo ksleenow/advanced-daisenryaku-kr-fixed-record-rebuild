@@ -94,15 +94,16 @@ RECORDS = (
     ("production_ground_initial", 0x0EF270, ("지", "상", " "), (0x00F9C0,)),
     ("production_ground_focused", 0x0EF274, ("지", "상"), (0x00F9AA,)),
     # B-button help overlay.  The Japanese records are
-    # `Aボタン 自部隊  Cボタン 速度` and its A/C-swapped form.  Keep the
-    # stock A/C glyphs and the exact 17-cell geometry in both configurations.
-    ("map_help_a_unit_c_speed", 0x0EFAFC,
-     ("A", "버", "튼", " ", " ", "자", "부", "대", " ", " ",
-      "C", "버", "튼", " ", " ", "속", "도"),
+    # `Aボタン 次部隊  Cボタン 首都` and its A/C-swapped form.  Keep the
+    # stock A/C glyphs and the exact 17-cell record length.  Korean `버튼` is
+    # one cell shorter than `ボタン`, so retain a harmless trailing blank.
+    ("map_help_a_next_unit_c_capital", 0x0EFAFC,
+     ("A", "버", "튼", " ", "다", "음", "부", "대", " ", " ",
+      "C", "버", "튼", " ", "수", "도", " "),
      (0x00A6A8,)),
-    ("map_help_a_speed_c_unit", 0x0EFB13,
-     ("A", "버", "튼", " ", " ", "속", "도", " ", " ",
-      "C", "버", "튼", " ", " ", "자", "부", "대"),
+    ("map_help_a_capital_c_next_unit", 0x0EFB13,
+     ("A", "버", "튼", " ", "수", "도", " ", " ",
+      "C", "버", "튼", " ", "다", "음", "부", "대", " "),
      (0x00A6B4,)),
     # Situation header fields are independent fixed-width records.
     ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
