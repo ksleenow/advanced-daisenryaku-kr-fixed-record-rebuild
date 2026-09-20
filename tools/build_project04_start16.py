@@ -105,6 +105,13 @@ RECORDS = (
      ("A", "버", "튼", " ", "수", "도", " ", " ",
       "C", "버", "튼", " ", "다", "음", "부", "대", " "),
      (0x00A6B4,)),
+    # Defeat result.  Japanese `あなたの負けです。` is exactly nine cells
+    # (counter 0x08).  Keep the same geometry and redirect its sole known
+    # executable reference; adjacent victory/draw records remain untouched
+    # until their independent call paths are proven.
+    ("defeat_result", 0x0EFE71,
+     ("당", "신", "의", " ", "패", "배", "입", "니", "다"),
+     (0x00B7AC,)),
     # Situation header fields are independent fixed-width records.
     ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
     ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
