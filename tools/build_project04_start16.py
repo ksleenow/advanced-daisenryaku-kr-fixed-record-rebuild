@@ -28,12 +28,52 @@ RESOURCE_LOGO_POINTER = 0x000640
 RESOURCE_LOGO_HOOK = 0x0006FE
 RESOURCE_LOGO_TOP_MAP = 0x0D5426
 RESOURCE_LOGO_DIR = Path("assets/resource-logo")
+CREDIT_HELPER = 0x1E8000
+CREDIT_RECORD_BASE = 0x1E8100
+TIMELINE_BASE = 0x1EA000
 STOCK_CODES = {
     "A": 0x15, "C": 0x17,
     "N": 0x22, "o": 0x3D, ".": 0x9B,
     "0": 0x00, "1": 0x01, "2": 0x02, "3": 0x03, "4": 0x04,
     "5": 0x05, "6": 0x06, "7": 0x07, "8": 0x08, "9": 0x09,
 }
+# Korean glyphs already present in the approved v029 16x16 bank.  Reusing
+# these audited slots keeps the expanded-code namespace small and leaves the
+# immutable source bank untouched.
+BASELINE_KOREAN_GLYPHS = {
+    "가": 0x067, "각": 0x11D, "공": 0x0D5, "군": 0x0FF,
+    "기": 0x068, "내": 0x13A, "년": 0x1C9, "담": 0x0C2,
+    "데": 0x074, "독": 0x1D4, "동": 0x108, "라": 0x083,
+    "리": 0x084, "립": 0x1D0, "방": 0x126, "베": 0x090,
+    "병": 0x0B9, "부": 0x14A, "불": 0x0B3, "사": 0x053,
+    "성": 0x111, "소": 0x057, "스": 0x055, "아": 0x049,
+    "약": 0x0AF, "양": 0x1DE, "오": 0x04D, "유": 0x081,
+    "인": 0x0B5, "일": 0x1D6, "임": 0x1D3, "작": 0x0EF,
+    "장": 0x0AA, "정": 0x0C0, "제": 0x06F, "조": 0x070,
+    "주": 0x0E4, "진": 0x114, "체": 0x1E0, "총": 0x184,
+    "취": 0x0C5, "코": 0x052, "통": 0x16B, "폭": 0x0D0,
+    "한": 0x0CC, "할": 0x1DD, "합": 0x10B, "해": 0x1DF,
+    "협": 0x1D8, "화": 0x118, "회": 0x16E, "히": 0x077,
+}
+
+CREDIT_LINES = (
+    "한글화 v0.95",
+    "한글화 기술·제작 Codex",
+    "기획·제작 쏘갈장군",
+)
+
+# The playable attract-mode chronology ends at the non-aggression pact.  The
+# later Potsdam record remains unused, exactly as in the Japanese program.
+TIMELINE_SPECS = (
+    ("timeline_1919", 0x0EFB7D, 0x000EF4, "1919년 베르사유 조약 체결", None),
+    ("timeline_1923", 0x0EFB92, 0x000FC0, "1923년 뮌헨 폭동", None),
+    ("timeline_1933", 0x0EFBA3, 0x000FE2, "1933년 히틀러 내각 성립", None),
+    ("timeline_1934", 0x0EFBB7, 0x00109C, "1934년 힌덴부르크 사망", "     히틀러 총통 취임"),
+    ("timeline_1936", 0x0EFBDD, 0x001172, "1936년 독일 라인란트 진주", "     일독 방공협정 조인"),
+    ("timeline_1938_a", 0x0EFC09, 0x00128E, "1938년 독일 오스트리아 병합", "     뮌헨 회담"),
+    ("timeline_1938_b", 0x0EFC2F, 0x0013AE, "1938년 주데텐란트 독일에 할양", None),
+    ("timeline_1939", 0x0EFC46, 0x0014BA, "1939년 독일, 체코 해체", "     독소 불가침조약 체결"),
+)
 # Correct two adjacent source-glyph readings in the cloned 16x16 bank.
 # The original audit mislabeled 0x0DE (車) as 重; the actual 重 is 0x0FF.
 FIXED_GLYPH_OVERRIDES = {0x0CD: "전", 0x0DE: "차", 0x0FF: "중"}
@@ -232,6 +272,15 @@ def glyph_code(index: int) -> bytes:
     return bytes((0xFE, index - 0x1FD))
 
 
+def baseline_glyph_code(index: int) -> bytes:
+    """Encode a glyph index from the original Japanese two-tier code table."""
+    if index < 0xFD:
+        return bytes((index,))
+    if index <= 0x1FC:
+        return bytes((0xFD, index - 0xFD))
+    raise ValueError(f"baseline glyph index out of range: 0x{index:03X}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", required=True, type=Path)
@@ -285,6 +334,17 @@ def main() -> None:
         for character in cells:
             if character not in (" ", "-") and character not in STOCK_CODES and character not in characters:
                 characters.append(character)
+    supplemental_text = "".join(CREDIT_LINES)
+    for _, _, _, first, second in TIMELINE_SPECS:
+        supplemental_text += first + (second or "")
+    for character in supplemental_text:
+        if (
+            character not in (" ", "-", ",")
+            and character not in STOCK_CODES
+            and character not in BASELINE_KOREAN_GLYPHS
+            and character not in characters
+        ):
+            characters.append(character)
     glyph_indices = {character: 0x240 + i for i, character in enumerate(characters)}
     expansion_ranges = [
         (FONT16_CLONE, FONT16_SIZE),
@@ -310,18 +370,35 @@ def main() -> None:
     cursor = RECORD_BASE
     record_report = []
     record_addresses = {}
-    for name, original, cells, refs in RECORDS:
-        record_addresses[name] = cursor
+
+    def encode_cells(cells: str | tuple[str, ...]) -> bytes:
         payload = bytearray((len(cells) - 1,))
         for cell in cells:
             if cell == " ":
-                payload.extend(b"\x14")
+                payload.append(0x14)
             elif cell == "-":
-                payload.extend(b"\x8C")
+                payload.append(0x8C)
+            elif cell == ",":
+                payload.append(0x9A)
+            elif cell == "·":
+                payload.extend(glyph_code(glyph_indices[cell]))
             elif cell in STOCK_CODES:
                 payload.append(STOCK_CODES[cell])
-            else:
+            elif "A" <= cell <= "Z":
+                payload.append(0x15 + ord(cell) - ord("A"))
+            elif "a" <= cell <= "z":
+                payload.append(0x2F + ord(cell) - ord("a"))
+            elif cell in glyph_indices:
                 payload.extend(glyph_code(glyph_indices[cell]))
+            elif cell in BASELINE_KOREAN_GLYPHS:
+                payload.extend(baseline_glyph_code(BASELINE_KOREAN_GLYPHS[cell]))
+            else:
+                raise ValueError(f"no glyph encoding for {cell!r}")
+        return bytes(payload)
+
+    for name, original, cells, refs in RECORDS:
+        record_addresses[name] = cursor
+        payload = bytearray(encode_cells(cells))
         target = cursor
         rom[target:target + len(payload)] = payload
         expansion_ranges.append((target, len(payload)))
@@ -337,6 +414,70 @@ def main() -> None:
             "pointer_operands": [f"0x{x:06X}" for x in refs],
         })
         cursor += len(payload)
+
+    # Opening localization credits.  The stock message remains on its original
+    # renderer path; this helper adds three lower rows, restores the original
+    # VDP register write, and extends the stock 60-frame delay to 180 frames.
+    credit_cursor = CREDIT_RECORD_BASE
+    credit_addresses = []
+    for line in CREDIT_LINES:
+        encoded = encode_cells(line)
+        credit_addresses.append(credit_cursor)
+        rom[credit_cursor:credit_cursor + len(encoded)] = encoded
+        expansion_ranges.append((credit_cursor, len(encoded)))
+        credit_cursor += len(encoded)
+        if credit_cursor & 1:
+            credit_cursor += 1
+    credit_program = bytearray()
+    credit_destinations = []
+    for line, address, row in zip(
+        CREDIT_LINES, credit_addresses, (0xFF8900, 0xFF8A80, 0xFF8C00)
+    ):
+        destination = row + ((40 - len(line) * 2) // 2) * 2
+        credit_destinations.append(destination)
+        credit_program += bytes.fromhex("41F9") + address.to_bytes(4, "big")
+        credit_program += bytes.fromhex("43F9") + destination.to_bytes(4, "big")
+        credit_program += bytes.fromhex("72007400")
+        credit_program += bytes.fromhex("4EB900008166")
+    credit_program += bytes.fromhex("33FC0EEE00FF03824E75")
+    rom[CREDIT_HELPER:CREDIT_HELPER + len(credit_program)] = credit_program
+    expansion_ranges.append((CREDIT_HELPER, len(credit_program)))
+    expected_credit_hook = bytes.fromhex("33FC0EEE00FF0382")
+    if bytes(rom[0x000766:0x00076E]) != expected_credit_hook:
+        raise SystemExit("REFUSED: opening credit hook bytes differ from approved v029")
+    rom[0x000766:0x00076E] = bytes.fromhex("4EB9001E80004E71")
+    allowed_prefix.update(range(0x000766, 0x00076E))
+    if bytes(rom[0x00077C:0x00077E]) != bytes.fromhex("003C"):
+        raise SystemExit("REFUSED: opening duration is not stock 60 frames")
+    rom[0x00077C:0x00077E] = bytes.fromhex("00B4")
+    allowed_prefix.update(range(0x00077C, 0x00077E))
+
+    # Full playable chronology.  Continuation records are deliberately stored
+    # immediately after their primary record because the stock routine advances
+    # A0 rather than loading another pointer for the second line.
+    timeline_cursor = TIMELINE_BASE
+    timeline_report = []
+    for name, original, ref, first, second in TIMELINE_SPECS:
+        target = timeline_cursor
+        first_encoded = encode_cells(first)
+        rom[timeline_cursor:timeline_cursor + len(first_encoded)] = first_encoded
+        expansion_ranges.append((timeline_cursor, len(first_encoded)))
+        timeline_cursor += len(first_encoded)
+        second_target = None
+        if second:
+            second_target = timeline_cursor
+            second_encoded = encode_cells(second)
+            rom[timeline_cursor:timeline_cursor + len(second_encoded)] = second_encoded
+            expansion_ranges.append((timeline_cursor, len(second_encoded)))
+            timeline_cursor += len(second_encoded)
+        redirect(ref, original, target, f"{name} chronology record")
+        timeline_report.append({
+            "name": name,
+            "target_record": f"0x{target:06X}",
+            "first": first,
+            "second": second,
+            "second_record": f"0x{second_target:06X}" if second_target else None,
+        })
 
     # The stock detail transition draws its footer/category before the new
     # background art has finished replacing the previous screen.  Port the
@@ -486,6 +627,13 @@ def main() -> None:
         "unexpected_prefix_changes": 0,
         "glyphs": glyph_report,
         "records": record_report,
+        "opening_credits": {
+            "lines": list(CREDIT_LINES),
+            "display_frames": 180,
+            "destinations": [f"0x{x:08X}" for x in credit_destinations],
+            "helper": f"0x{CREDIT_HELPER:06X}",
+        },
+        "timeline": timeline_report,
         "pointer_changes": pointer_changes,
     }
     args.output.with_suffix(args.output.suffix + ".build.json").write_text(
