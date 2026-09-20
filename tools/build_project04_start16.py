@@ -68,11 +68,11 @@ TIMELINE_SPECS = (
     ("timeline_1919", 0x0EFB7D, 0x000EF4, "1919년 베르사유 조약 체결", None),
     ("timeline_1923", 0x0EFB92, 0x000FC0, "1923년 뮌헨 폭동", None),
     ("timeline_1933", 0x0EFBA3, 0x000FE2, "1933년 히틀러 내각 성립", None),
-    ("timeline_1934", 0x0EFBB7, 0x00109C, "1934년 힌덴부르크 사망", "     히틀러 총통 취임"),
-    ("timeline_1936", 0x0EFBDD, 0x001172, "1936년 독일 라인란트 진주", "     일독 방공협정 조인"),
-    ("timeline_1938_a", 0x0EFC09, 0x00128E, "1938년 독일 오스트리아 병합", "     뮌헨 회담"),
+    ("timeline_1934", 0x0EFBB7, 0x00109C, "1934년 힌덴부르크 사망", "    히틀러 총통 취임"),
+    ("timeline_1936", 0x0EFBDD, 0x001172, "1936년 독일 라인란트 진주", "    일독 방공협정 조인"),
+    ("timeline_1938_a", 0x0EFC09, 0x00128E, "1938년 독일 오스트리아 병합", "    뮌헨 회담"),
     ("timeline_1938_b", 0x0EFC2F, 0x0013AE, "1938년 주데텐란트 독일에 할양", None),
-    ("timeline_1939", 0x0EFC46, 0x0014BA, "1939년 독일, 체코 해체", "     독소 불가침조약 체결"),
+    ("timeline_1939", 0x0EFC46, 0x0014BA, "1939년 독일, 체코 해체", "    독소 불가침조약 체결"),
 )
 # Correct two adjacent source-glyph readings in the cloned 16x16 bank.
 # The original audit mislabeled 0x0DE (車) as 重; the actual 重 is 0x0FF.
@@ -339,7 +339,7 @@ def main() -> None:
         supplemental_text += first + (second or "")
     for character in supplemental_text:
         if (
-            character not in (" ", "-", ",")
+            character not in (" ", "-")
             and character not in STOCK_CODES
             and character not in BASELINE_KOREAN_GLYPHS
             and character not in characters
@@ -378,8 +378,6 @@ def main() -> None:
                 payload.append(0x14)
             elif cell == "-":
                 payload.append(0x8C)
-            elif cell == ",":
-                payload.append(0x9A)
             elif cell == "·":
                 payload.extend(glyph_code(glyph_indices[cell]))
             elif cell in STOCK_CODES:

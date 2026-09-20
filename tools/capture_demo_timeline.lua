@@ -1,7 +1,7 @@
--- Automated attract-demo validation for v069.
+-- Automated attract-demo validation for v070.
 -- Captures enough frames to cover credits, title, and the complete 1919-1939
 -- chronology, then restores normal speed before closing BizHawk.
-local out = "C:/Users/이광선/Documents/Codex/2026-07-20/apr/advanced-daisenryaku-kr-fixed-record-rebuild/evidence/runtime/demo-timeline-v069"
+local out = "C:/Users/이광선/Documents/Codex/2026-07-20/apr/advanced-daisenryaku-kr-fixed-record-rebuild/evidence/runtime/demo-timeline-v070"
 client.speedmode(6400)
 for frame = 0, 12000 do
     if frame % 60 == 0 then
