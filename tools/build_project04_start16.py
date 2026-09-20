@@ -121,6 +121,14 @@ RECORDS = (
     ("defeat_result", 0x0EFE71,
      ("당", "신", "의", " ", "패", "배", "입", "니", "다"),
      (0x00B7AC,)),
+    # Campaign/end-of-war notice.  The Japanese source is
+    # `ヨーロッパにおける戦いは終わった`, not the old rebuild's inferred
+    # "Germany conquered" label.  Keep all 16 visible cells; TURN immediately
+    # before it is Japanese-original English and remains untouched.
+    ("european_war_ended", 0x0EFE89,
+     ("유", "럽", "에", "서", "의", " ", "전", "쟁",
+      "은", " ", "끝", "났", "다", " ", " ", " "),
+     (0x00187E,)),
     # Situation header fields are independent fixed-width records.
     ("situation_snow_depth", 0x0EF5B2, ("적", "설", "량"), (0x010F58,)),
     ("situation_normal", 0x0EF5CD, ("정", "상"), (0x010F9C,)),
