@@ -78,25 +78,57 @@ def main() -> None:
                 raise SystemExit(f"REFUSED: no glyph for {cell!r}")
         return bytes(result)
 
-    # Scenario zero is redirected to one QA-only record.  Each scenario is
-    # separated by the stock page-break control so A advances in source order.
+    official_records = build_report["campaign_briefings"]["records"]
+    if len(official_records) != 44:
+        raise SystemExit("REFUSED: official build report does not contain 44 records")
+
+    # Scenario zero is redirected to one QA-only record.  The scenario marker
+    # gets its own page, after which every original text slot and page-break
+    # control is reproduced.  This avoids increasing any stock screen's row
+    # topology (the first review build added a heading to the record itself and
+    # overflowed scenario 4's six-row screen).
     review = bytearray()
     row_count = 0
     for scenario, entry in enumerate(translations):
         if int(entry["scenario"]) != scenario:
             raise SystemExit(f"REFUSED: translation index mismatch at {scenario}")
         heading = f"시나리오 {scenario:02d}"
-        rows = [heading, *entry["rows"]]
-        for row_index, text in enumerate(rows):
+        heading_payload = encode_text(heading)
+        review.append(len(heading) - 1)
+        review.extend(heading_payload)
+        review.append(0x80)
+        row_count += 1
+
+        record = official_records[scenario]
+        if "shared_with" in record:
+            record = official_records[int(record["shared_with"])]
+        controls = [int(value, 16) for value in record["original_controls"]]
+        translated_index = 0
+        text_control_indices = [
+            index for index, control in enumerate(controls) if not control & 0x80
+        ]
+        for control_index, control in enumerate(controls):
+            if control & 0x80:
+                review.append(control)
+                continue
+            text = (
+                entry["rows"][translated_index]
+                if translated_index < len(entry["rows"])
+                else " "
+            )
+            translated_index += 1
             if not 1 <= len(text) <= 20:
                 raise SystemExit(
                     f"REFUSED: scenario {scenario} row width {len(text)}: {text!r}"
                 )
             payload = encode_text(text)
-            control = len(text) - 1
-            if scenario == 43 and row_index == len(rows) - 1:
-                control |= 0x40
-            review.append(control)
+            rebuilt_control = len(text) - 1
+            if (
+                scenario == 43
+                and control_index == text_control_indices[-1]
+            ):
+                rebuilt_control |= 0x40
+            review.append(rebuilt_control)
             review.extend(payload)
             row_count += 1
         if scenario != 43:
