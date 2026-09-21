@@ -37,6 +37,14 @@ BRIEFING_RELOCATED_BASE = 0x140000
 BRIEFING_POINTER_OFFSET = 0x00230E
 BRIEFING_OFFSET_TABLE = 0x023E5E
 BRIEFING_SCENARIO_COUNT = 44
+FACTION_TABLE_SOURCE = 0x0233F1
+FACTION_TABLE_CLONE = 0x149000
+FACTION_RECORD_SIZE = 9
+# The stock selectable-faction table has 81 records (IDs 0..80).  The
+# following bytes belong to the separate terrain-name data and must not be
+# included in this relocation.
+FACTION_RECORD_COUNT = 81
+FACTION_TABLE_POINTER_OFFSET = 0x0065C8
 STOCK_CODES = {
     "A": 0x15, "C": 0x17,
     "N": 0x22, "o": 0x3D, ".": 0x9B,
@@ -412,7 +420,7 @@ def main() -> None:
         for character in cells:
             if character not in (" ", "-") and character not in STOCK_CODES and character not in characters:
                 characters.append(character)
-    supplemental_text = "".join(CREDIT_LINES)
+    supplemental_text = "".join(CREDIT_LINES) + "독일제국"
     for _, _, _, first, second in TIMELINE_SPECS:
         supplemental_text += first + (second or "")
     supplemental_text += "".join(row for entry in briefings for row in entry["rows"])
@@ -495,6 +503,47 @@ def main() -> None:
             "pointer_operands": [f"0x{x:06X}" for x in refs],
         })
         cursor += len(payload)
+
+    # The pre-game campaign-information country name is copied from the
+    # Japanese 9-byte faction table: eight display bytes plus the stock 0x07
+    # terminator.  Clone the complete table and change only faction 1.  Four
+    # Korean 16x16 glyphs fit in the original eight-byte display field, so the
+    # RAM copy width, following weather record, and renderer topology remain
+    # unchanged.  Relocating the table also keeps the source records immutable.
+    faction_table_size = FACTION_RECORD_SIZE * FACTION_RECORD_COUNT
+    faction_table = bytearray(
+        source[FACTION_TABLE_SOURCE:FACTION_TABLE_SOURCE + faction_table_size]
+    )
+    for index in range(FACTION_RECORD_COUNT):
+        terminator = faction_table[index * FACTION_RECORD_SIZE + 8]
+        if terminator != 0x07:
+            raise SystemExit(
+                f"REFUSED: faction {index} terminator is 0x{terminator:02X}, expected 0x07"
+            )
+    german_payload = encode_cells(("독", "일", "제", "국"))[1:]
+    if len(german_payload) > 8:
+        raise SystemExit("REFUSED: 독일제국 exceeds the fixed eight-byte faction field")
+    german_start = FACTION_RECORD_SIZE
+    faction_table[german_start:german_start + 8] = german_payload.ljust(8, b"\x14")
+    rom[
+        FACTION_TABLE_CLONE:FACTION_TABLE_CLONE + faction_table_size
+    ] = faction_table
+    expansion_ranges.append((FACTION_TABLE_CLONE, faction_table_size))
+    redirect(
+        FACTION_TABLE_POINTER_OFFSET,
+        FACTION_TABLE_SOURCE,
+        FACTION_TABLE_CLONE,
+        "fixed-width faction table for pre-game country name",
+    )
+    record_report.append({
+        "name": "pregame_german_country",
+        "source_record": f"0x{FACTION_TABLE_SOURCE + FACTION_RECORD_SIZE:06X}",
+        "target_record": f"0x{FACTION_TABLE_CLONE + FACTION_RECORD_SIZE:06X}",
+        "cells": 4,
+        "text": "독일제국",
+        "bytes": german_payload.hex(" ").upper(),
+        "pointer_operands": [f"0x{FACTION_TABLE_POINTER_OFFSET:06X}"],
+    })
 
     # Opening localization credits.  The stock message remains on its original
     # renderer path; this helper adds three lower rows, restores the original
