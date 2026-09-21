@@ -27,6 +27,14 @@ def sha256(data: bytes) -> str:
 
 
 def main() -> None:
+    raise SystemExit(
+        "REFUSED: sequential campaign-review ROM is retired; the game cannot "
+        "safely concatenate scenario briefing execution state"
+    )
+
+
+def retired_main_reference() -> None:
+    """Retained only as an audited record of the rejected experiment."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--translations", type=Path, required=True)
