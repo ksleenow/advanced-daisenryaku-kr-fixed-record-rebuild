@@ -45,6 +45,8 @@ FACTION_RECORD_SIZE = 9
 # included in this relocation.
 FACTION_RECORD_COUNT = 81
 FACTION_TABLE_POINTER_OFFSET = 0x0065C8
+FONT16_SINGLE_CELL_HOOK = 0x0081C8
+FONT16_SINGLE_CELL_HELPER = 0x149400
 STOCK_CODES = {
     "A": 0x15, "C": 0x17,
     "N": 0x22, "o": 0x3D, ".": 0x9B,
@@ -157,7 +159,15 @@ TIMELINE_SPECS = (
 )
 # Correct two adjacent source-glyph readings in the cloned 16x16 bank.
 # The original audit mislabeled 0x0DE (車) as 重; the actual 重 is 0x0FF.
-FIXED_GLYPH_OVERRIDES = {0x0CD: "전", 0x0DE: "차", 0x0FF: "중"}
+FIXED_GLYPH_OVERRIDES = {
+    0x0CD: "전",
+    0x0DE: "차",
+    0x0FF: "중",
+    # The fixed-record action menu at 0x0EF2BB is 確定.  The earlier audit
+    # mislabeled this duplicate 確 slot as 況, which rendered it as 황정.
+    # Correct only the cloned bitmap; record bytes and draw counts stay intact.
+    0x117: "확",
+}
 DEV_TRANSITION_EXIT = 0x1BCC60
 DEV_TRANSITION_ENTRY = 0x1BCCB0
 DEV_TRANSITION_EXIT_HOOK = 0x00FDB2
@@ -520,9 +530,11 @@ def main() -> None:
             raise SystemExit(
                 f"REFUSED: faction {index} terminator is 0x{terminator:02X}, expected 0x07"
             )
-    german_payload = encode_cells(("독", "일", "제", "국"))[1:]
-    if len(german_payload) > 8:
-        raise SystemExit("REFUSED: 독일제국 exceeds the fixed eight-byte faction field")
+    # Preserve the stock field width and all eight renderer iterations.  Four
+    # private one-byte markers plus the original one-byte blanks produce the
+    # requested seven visible cells `독 일 제 국` without changing any record
+    # length, loop count, or following RAM field.
+    german_payload = bytes.fromhex("F0 14 F1 14 F2 14 F3 14")
     german_start = FACTION_RECORD_SIZE
     faction_table[german_start:german_start + 8] = german_payload.ljust(8, b"\x14")
     rom[
@@ -535,12 +547,58 @@ def main() -> None:
         FACTION_TABLE_CLONE,
         "fixed-width faction table for pre-game country name",
     )
+
+    # The cloned 16x16 bank normally uses two-byte codes for high Korean glyph
+    # indices.  Decode F0..F3 as four Korean glyphs only while the dedicated
+    # pre-game country buffer starts with F0.  In every other context the
+    # helper executes the exact stock MOVEQ/MOVE/CMP sequence and returns the
+    # original condition codes to the untouched BCS at 0x81D0.
+    expected_single_cell_decode = bytes.fromhex("780018180C0400FD")
+    if bytes(rom[FONT16_SINGLE_CELL_HOOK:FONT16_SINGLE_CELL_HOOK + 8]) != expected_single_cell_decode:
+        raise SystemExit("REFUSED: stock 16x16 decoder prefix differs from approved v029")
+
+    helper = bytearray()
+    labels: dict[str, int] = {}
+    branches: list[tuple[int, str]] = []
+
+    def helper_label(name: str) -> None:
+        labels[name] = len(helper)
+
+    def helper_branch(opcode: int, target: str) -> None:
+        helper.extend((opcode, 0))
+        branches.append((len(helper) - 1, target))
+
+    helper.extend(bytes.fromhex("78001818"))       # stock MOVEQ/MOVE.B
+    helper.extend(bytes.fromhex("0C3800F0C810"))   # buffer marker guard
+    helper_branch(0x66, "normal")                  # BNE.S
+    for marker, target in zip(range(0xF0, 0xF4), ("dok", "il", "je", "guk")):
+        helper.extend(bytes((0x0C, 0x04, 0x00, marker)))
+        helper_branch(0x67, target)                 # BEQ.S
+    helper_label("normal")
+    helper.extend(bytes.fromhex("0C0400FD4E75"))   # stock CMPI.B / RTS
+    for name, index in (("dok", 0x1D4), ("il", 0x1D6), ("je", 0x06F), ("guk", 0x2E5)):
+        helper_label(name)
+        helper.extend(bytes.fromhex("383C") + index.to_bytes(2, "big"))
+        helper_branch(0x60, "normal")              # BRA.S
+    for displacement_pos, target in branches:
+        displacement = labels[target] - (displacement_pos + 1)
+        if not -128 <= displacement <= 127:
+            raise SystemExit("REFUSED: single-cell helper branch exceeds byte range")
+        helper[displacement_pos] = displacement & 0xFF
+
+    rom[FONT16_SINGLE_CELL_HOOK:FONT16_SINGLE_CELL_HOOK + 8] = (
+        bytes.fromhex("4EB9") + FONT16_SINGLE_CELL_HELPER.to_bytes(4, "big") + bytes.fromhex("4E71")
+    )
+    allowed_prefix.update(range(FONT16_SINGLE_CELL_HOOK, FONT16_SINGLE_CELL_HOOK + 8))
+    rom[FONT16_SINGLE_CELL_HELPER:FONT16_SINGLE_CELL_HELPER + len(helper)] = helper
+    expansion_ranges.append((FONT16_SINGLE_CELL_HELPER, len(helper)))
+
     record_report.append({
         "name": "pregame_german_country",
         "source_record": f"0x{FACTION_TABLE_SOURCE + FACTION_RECORD_SIZE:06X}",
         "target_record": f"0x{FACTION_TABLE_CLONE + FACTION_RECORD_SIZE:06X}",
         "cells": 4,
-        "text": "독일제국",
+        "text": "독 일 제 국",
         "bytes": german_payload.hex(" ").upper(),
         "pointer_operands": [f"0x{FACTION_TABLE_POINTER_OFFSET:06X}"],
     })
@@ -887,6 +945,13 @@ def main() -> None:
             "records": briefing_report,
         },
         "pointer_changes": pointer_changes,
+        "pregame_country_single_cell_decoder": {
+            "hook": f"0x{FONT16_SINGLE_CELL_HOOK:06X}",
+            "helper": f"0x{FONT16_SINGLE_CELL_HELPER:06X}",
+            "field_bytes": german_payload.hex(" ").upper(),
+            "field_width": 8,
+            "renderer_iterations": 8,
+        },
     }
     args.output.with_suffix(args.output.suffix + ".build.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
