@@ -1,5 +1,11 @@
 {
   "version": "EASY VER V1",
+  "provenance": {
+    "base_kind": "user-provided third-party Korean-patched ROM",
+    "repository_ownership_claim": "difficulty modifications only",
+    "part_of_primary_fixed_record_localization": false,
+    "rom_or_third_party_assets_distributed": false
+  },
   "base_korean_rom_sha256": "2C1F547239E5133423ADDA3A60196033582A4C6D37782FD9331046DD9C1A0FB2",
   "pre_experience_rom_sha256": "BB42981C0187D09B6EC3BD0BECF4A616D598A1046D7EA40CDC0BEE7BA8346925",
   "final_rom_sha256": "83F6FF3C223AD1D56ACD70D38AEBB49ED89C02369951C0C9BC81201DC4687FD0",

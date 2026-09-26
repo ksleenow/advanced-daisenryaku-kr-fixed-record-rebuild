@@ -36,8 +36,10 @@
 - [고정 레코드 번역 원장](docs/translation-ledger.md)
 - [실패 사례: 8x8 `0xA7` 이상 제어 코드 충돌](docs/failed-experiment-8x8-a7-control-codes.md)
 - [EASY VER V1 재빌드 기록](docs/easy-version-v1-rebuild.md)
-  — USER 유닛 상한 +5, 시작 군자금 50,000, 전투 경험치 ×6과
-  `EASY VER` 로고를 다음 본편 버전에서도 재현하기 위한 기록이다.
+  — 사용자가 제공한 외부 제작자의 한글 패치 ROM을 로컬 입력으로 삼아
+  USER 유닛 상한 +5, 시작 군자금 50,000, 전투 경험치 ×6과 `EASY VER`
+  로고를 적용한 별도 파생 실험 기록이다. 본 프로젝트의 자체 한글화
+  결과물에는 포함되지 않는다.
 
 문서는 구조와 검증 방법만 제공한다. 원본 ROM, 원본 게임 자산, 완성 ROM,
 사용자 제공 폰트는 저장소에 포함하지 않는다.
